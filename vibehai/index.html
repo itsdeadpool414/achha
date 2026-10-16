@@ -97,7 +97,7 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt
 const pub = p => sb.storage.from(BUCKET).getPublicUrl(p).data.publicUrl;
 const SCORE_TXT = 'Score = Views × 1 + Likes × 2 + Shares × 5 + 50 bonus if picked';
 const ago = d => { const m = Math.round((Date.now() - new Date(d)) / 6e4); return m < 1 ? 'just now' : m < 60 ? m + ' min ago' : Math.round(m / 60) + ' h ago'; };
-const annHtml = list => list.map(a => `<div class="ann"><div>${esc(a.body)}</div><div class="mut">${a.by === 'gate' ? 'Gate team' : 'Organiser'} · ${ago(a.at)}</div></div>`).join('');
+const annHtml = list => list.map(a => `<div class="ann"><div>${esc(a.body)}</div><div class="mut">Organiser · ${ago(a.at)}</div></div>`).join('');
 const orgBadge = e => e.org_name ? `<span class="pill g">✅ ${esc(e.org_name)}</span>` : '<span class="pill g">✅ VERIFIED EVENT</span>';
 const distKm = (a, b, c, d) => { const R = 6371, x = (c - a) * Math.PI / 180, y = (d - b) * Math.PI / 180, h = Math.sin(x / 2) ** 2 + Math.cos(a * Math.PI / 180) * Math.cos(c * Math.PI / 180) * Math.sin(y / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(h)); };
 const orgLink = n => `#/o/${encodeURIComponent(n)}`;
@@ -149,8 +149,8 @@ async function render() {
       case 'movie': return await movie(parts[1]);
       case 'admin': return await admin(parts[1]);
       case 'screen': return await screen(parts[1]);
-      case 'gate': return await gate(parts[1], q.get('t'));
-      case 'host': return await host();
+      case 'gate': location.hash = '#/'; return;
+      case 'host': location.hash = '#/org?s=1'; return;
       case 'org': return await orgPortal(parts[1], q);
       case 'score': return await scorePage();
       case 'u': return await profile(parts[1]);
@@ -455,7 +455,7 @@ async function admin(tab) {
   tab = tab || 'review';
   const t = (k, l) => `<a class="btn sm ${tab === k ? '' : 'ghost'}" href="#/admin/${k}">${l}</a>`;
   app.innerHTML = `<div class="wrap"><div class="top"><a href="#/" class="logo">⚡ VIBEHAI</a><span><span class="pill v">ADMIN</span> <a href="#" id="lo" class="mut sm" style="margin-left:8px">Log out</a></span></div>
-    <div id="stats" class="row"></div><div style="margin-top:10px">${t('review', 'Review')}${t('picked', 'Picked & payouts')}${t('events', 'Events')}${t('hosts', 'Host requests')}${t('orgs', 'Organisers')}</div><div id="body"><p class="mut" style="margin-top:14px">Loading…</p></div></div>${nav('')}`;
+    <div id="stats" class="row"></div><div style="margin-top:10px">${t('review', 'Review')}${t('picked', 'Picked & payouts')}${t('events', 'Events')}${t('orgs', 'Organisers')}</div><div id="body"><p class="mut" style="margin-top:14px">Loading…</p></div></div>${nav('')}`;
   rpc('vh_admin_stats').then(s => { $('#stats').innerHTML = `<div class="stat"><b>${s.fans}</b><span>Fans</span></div><div class="stat"><b>${s.reels}</b><span>Reels</span></div><div class="stat"><b>${s.pending}</b><span>To review</span></div><div class="stat"><b style="color:var(--g)">₹${s.payout_due}</b><span>Due</span></div>`; });
   $('#lo').onclick = async ev => { ev.preventDefault(); await rpc('vh_admin_logout'); toast('Logged out'); admin(); };
   const body = $('#body');
@@ -716,7 +716,6 @@ async function orgPortal(tab, q) {
 async function eventDash(slug, box) {
   box.innerHTML = '<p class="mut sm" style="margin-top:8px">Loading…</p>';
   const [n, anns] = await Promise.all([rpc('vh_admin_event_stats', { p_slug: slug }), rpc('vh_announcements', { p_slug: slug }, false)]);
-  const gateUrl = `${BASE}#/gate/${slug}?t=${n.gate_token}`;
   const st = (v, l, c) => `<div class="stat"><b${c ? ` style="color:${c}"` : ''}>${v}</b><span>${l}</span></div>`;
   box.innerHTML = `<div style="margin-top:12px">
     <div class="row">${st(n.checked_in, 'Checked in')}${st(n.reels, 'Reels')}${st(n.creators, 'Creators')}</div>
@@ -725,72 +724,15 @@ async function eventDash(slug, box) {
     ${n.top ? `<div class="card reelrow" style="margin-top:10px"><video src="${pub(n.top.video_path)}#t=0.5" muted playsinline preload="metadata"></video><div><b>🏆 Top reel</b><div class="sm">@${esc(n.top.creator)}</div><div class="mut sm">${esc(n.top.caption || '')}</div><div class="pill v" style="margin-top:6px">⚡ ${n.top.score}</div></div></div>` : ''}
     <button class="btn sm ghost cps">📋 Copy numbers for sponsors</button>
     <h2 style="font-size:22px">📢 Live announcement</h2>
-    <input class="an" maxlength="160" placeholder="Gates open now · DJ at 9 PM · Food court near Gate 2">
+    <input class="an" maxlength="160" placeholder="Doors open now · DJ at 9 PM · Food court near the stage">
     <button class="btn sm send">Send to fans + venue screen</button>
-    <div class="alist">${anns.map(a => `<div class="ann" data-id="${a.id}"><div>${esc(a.body)}</div><div class="mut">${a.by === 'gate' ? 'Gate team' : 'Organiser'} · ${ago(a.at)} · <a href="#" class="del" style="color:#ff7a7a">delete</a></div></div>`).join('')}</div>
-    <h2 style="font-size:22px">🚪 Gate Duty link</h2>
-    <p class="mut sm">For volunteers. They can show the QR, see live check-ins and post gate updates. No admin access. Rotate it to cut off old links.</p>
-    <button class="btn sm cpg">📋 Copy Gate Duty link</button><button class="btn sm ghost rot">🔄 New link</button></div>`;
+    <div class="alist">${anns.map(a => `<div class="ann" data-id="${a.id}"><div>${esc(a.body)}</div><div class="mut">Organiser · ${ago(a.at)} · <a href="#" class="del" style="color:#ff7a7a">delete</a></div></div>`).join('')}</div></div>`;
   box.querySelector('.cps').onclick = () => {
     const txt = `VibeHai numbers\n✅ ${n.checked_in} fans checked in at the venue\n🎬 ${n.reels} reels from ${n.creators} creators\n👁 ${n.views} views · ❤️ ${n.likes} likes · 📤 ${n.shares} shares\n⭐ ${n.picked} reels picked for Instagram`;
     navigator.clipboard.writeText(txt).then(() => toast('Copied'), () => prompt('Copy', txt));
   };
   box.querySelector('.send').onclick = async () => { const v = box.querySelector('.an').value.trim(); if (!v) return toast('Write a message'); try { await rpc('vh_post_announcement', { p_slug: slug, p_body: v, p_token: null }); toast('Sent 📢'); eventDash(slug, box); } catch (e) { toast(e.message); } };
   box.querySelectorAll('.del').forEach(a => a.onclick = async ev => { ev.preventDefault(); try { await rpc('vh_delete_announcement', { p_id: a.closest('.ann').dataset.id }); a.closest('.ann').remove(); } catch (e) { toast(e.message); } });
-  box.querySelector('.cpg').onclick = () => navigator.clipboard.writeText(gateUrl).then(() => toast('Gate link copied'), () => prompt('Gate Duty link', gateUrl));
-  box.querySelector('.rot').onclick = async () => { if (!confirm('Old Gate Duty links will stop working. Continue?')) return; try { await rpc('vh_admin_rotate_gate', { p_slug: slug }); toast('New link made'); eventDash(slug, box); } catch (e) { toast(e.message); } };
-}
-
-// ---------- Gate Duty (volunteer, token link) ----------
-async function gate(slug, token) {
-  await ready;
-  const g = await rpc('vh_gate', { p_slug: slug, p_token: token }, false);
-  if (!g.ok) { app.innerHTML = `<div class="wrap"><div class="top"><a href="#/" class="logo">⚡ VIBEHAI</a></div><div class="card">This Gate Duty link is not valid anymore. Ask the organiser for a new one.</div></div>`; return; }
-  app.innerHTML = `<div class="wrap center"><div class="top"><span class="logo">⚡ VIBEHAI</span><span class="pill gold">🚪 GATE DUTY</span></div>
-    <h1>${esc(g.name)}</h1><p class="mut">${esc(g.venue || '')}</p>
-    <div class="row" style="margin-top:14px"><div class="stat"><b id="gc" style="color:var(--g)">${g.checked_in}</b><span>Checked in</span></div><div class="stat"><b id="g10">${g.last_10min}</b><span>Last 10 min</span></div><div class="stat"><b id="gr">${g.reels}</b><span>Reels</span></div></div>
-    <p class="mut sm" style="margin-top:10px">Show this QR to fans. They scan it, allow location and get verified on their own phone.</p>
-    <div class="qr" style="margin-top:10px;width:min(80vw,340px)"><div id="q"></div></div>
-    <div class="card" style="text-align:left"><b>📢 Gate update</b><input id="an" maxlength="160" placeholder="Gate 2 open · Queue short at North gate"><button class="btn sm" id="snd">Send to fans</button></div>
-    <p class="mut sm">Refreshes every 20 seconds · Keep this screen on</p></div>`;
-  const qr = qrcode(0, 'M'); qr.addData(`${BASE}#/e/${slug}`); qr.make(); $('#q').innerHTML = qr.createImgTag(8, 0);
-  $('#snd').onclick = async () => { const v = $('#an').value.trim(); if (!v) return toast('Write a message'); try { await rpc('vh_post_announcement', { p_slug: slug, p_body: v, p_token: token }); $('#an').value = ''; toast('Sent 📢'); } catch (e) { toast(e.message); } };
-  const t = setInterval(async () => { try { const x = await rpc('vh_gate', { p_slug: slug, p_token: token }, false); if (x.ok) { $('#gc').textContent = x.checked_in; $('#g10').textContent = x.last_10min; $('#gr').textContent = x.reels; } } catch (e) {} }, 20000);
-  let wl = null; try { wl = await navigator.wakeLock?.request('screen'); } catch (e) {}
-  onLeave(() => { clearInterval(t); wl?.release?.(); });
-}
-
-// ---------- host request (organiser verification) ----------
-async function host() {
-  await ready;
-  const d0 = new Date(); d0.setDate(d0.getDate() + 7); d0.setHours(18, 0, 0, 0); const loc = d => new Date(d.getTime() - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 16);
-  app.innerHTML = `<div class="wrap"><div class="top"><a href="#/" class="logo">⚡ VIBEHAI</a><span class="pill v">FOR ORGANISERS</span></div>
-    <h1>Host your event</h1><p class="mut" style="margin-top:8px">Free for colleges and clubs. We verify every organiser before the QR goes live, so fans know the event and the payouts are real.</p>
-    <div class="card">
-      <label>College / club / organisation</label><input id="ho" placeholder="SVN College Cultural Committee">
-      <label>Your name</label><input id="hc" placeholder="Organiser name">
-      <label>Official email (college or club domain)</label><input id="he" type="email" placeholder="culture@college.ac.in" autocapitalize="off">
-      <label>Phone / WhatsApp</label><input id="hp" inputmode="tel" placeholder="+91">
-      <label>Event name</label><input id="hn" placeholder="Annual Fest 2026">
-      <label>Venue</label><input id="hv" placeholder="College ground, Harda">
-      <div class="row"><div><label>Starts</label><input id="hs" type="datetime-local" value="${loc(d0)}"></div><div><label>Ends</label><input id="hx" type="datetime-local" value="${loc(new Date(d0.getTime() + 5 * 36e5))}"></div></div>
-      <div class="row"><div><label>Latitude</label><input id="hla" inputmode="decimal"></div><div><label>Longitude</label><input id="hlo" inputmode="decimal"></div></div>
-      <button class="btn sm ghost" id="here">📍 I'm at the venue, use my location</button>
-      <label>Proof link (authorisation letter, poster or official page)</label><input id="hf" placeholder="Google Drive / Instagram link" autocapitalize="off">
-      <label>Anything else?</label><textarea id="hm" rows="2" placeholder="Expected crowd, sponsors…"></textarea>
-      <button class="btn" id="go">Send for verification</button></div>
-    <p class="mut sm center">We usually verify within 24 hours. We may call or email to confirm.</p></div>${nav('')}`;
-  $('#here').onclick = async () => { try { const c = await getPos(); $('#hla').value = c.latitude.toFixed(6); $('#hlo').value = c.longitude.toFixed(6); toast(`Got it (±${Math.round(c.accuracy)} m)`); } catch (e) { toast(e.message); } };
-  $('#go').onclick = async () => {
-    const lat = parseFloat($('#hla').value), lng = parseFloat($('#hlo').value);
-    if (isNaN(lat) || isNaN(lng)) return toast('Add the venue location');
-    $('#go').disabled = true;
-    try {
-      await rpc('vh_host_request', { p_org: $('#ho').value, p_contact: $('#hc').value, p_email: $('#he').value, p_phone: $('#hp').value, p_event: $('#hn').value, p_venue: $('#hv').value,
-        p_lat: lat, p_lng: lng, p_starts: new Date($('#hs').value).toISOString(), p_ends: new Date($('#hx').value).toISOString(), p_proof: $('#hf').value.trim(), p_note: $('#hm').value });
-      app.querySelector('.card').innerHTML = '<div class="center"><div class="big">✅</div><b>Request sent</b><p class="mut sm" style="margin-top:6px">We\'ll verify your details and send your event QR soon.</p></div>';
-    } catch (e) { toast(e.message); $('#go').disabled = false; }
-  };
 }
 
 // ---------- public scoring rules ----------
