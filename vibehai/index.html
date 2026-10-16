@@ -188,6 +188,7 @@ async function home() {
     ${live.map(card).join('') || '<p class="mut">No live events right now.</p>'}
     ${past.length ? '<h2>Past events</h2>' + past.map(card).join('') : ''}
     <div class="card"><b>Running a fest or event?</b><p class="mut sm" style="margin-top:4px">Get your event on VibeHai. We verify organisers before the QR goes live.</p><a class="btn sm line" href="#/org?s=1">🎪 Organiser sign-up</a><a class="btn sm ghost" href="#/org">Organiser login</a><a class="btn sm ghost" href="#/score">How picks work</a></div>
+    <a class="card" href="https://www.instagram.com/originalvibehai/" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none">📸 Follow <b>@originalvibehai</b> on Instagram for picks, drops and fest updates</a>
     <p class="mut sm center" style="margin-top:30px">100% fan-filmed · location-verified · Yaar, Vibe Hai ⚡</p>
   </div>${nav('home')}`;
   const nb = $('#near'); if (nb) nb.onclick = async () => { nb.disabled = true; try { await getPos(); home(); } catch (e) { toast(e.message); nb.disabled = false; } };
