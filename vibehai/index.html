@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#060608">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>VibeHai — Yaar, Vibe Hai ⚡</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&family=Space+Mono&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+<style>
+:root{--v:#7B2FFF;--p:#FF3CAC;--c:#00F0FF;--g:#00FF87;--gold:#FFD700;--bg:#060608;--card:#0d0d16;--el:#111120;--bd:rgba(255,255,255,.08);--t2:#9a9aa8}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{background:var(--bg);color:#fff;font-family:'DM Sans',system-ui,sans-serif;font-size:15px;line-height:1.5}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:520px;margin:0 auto;padding:16px 16px 100px;min-height:100vh}
+.logo{font-family:'Bebas Neue';font-size:28px;letter-spacing:4px;background:linear-gradient(90deg,var(--v),var(--p));-webkit-background-clip:text;color:transparent}
+.top{display:flex;align-items:center;justify-content:space-between;padding:4px 0 16px}
+.pill{font-family:'Space Mono';font-size:11px;letter-spacing:1.5px;text-transform:uppercase;padding:4px 10px;border-radius:20px;border:1px solid var(--bd);color:var(--t2);display:inline-block}
+.pill.v{border-color:var(--v);color:#b38cff;background:rgba(123,47,255,.12)}
+.pill.g{border-color:var(--g);color:var(--g);background:rgba(0,255,135,.08)}
+.pill.gold{border-color:var(--gold);color:var(--gold);background:rgba(255,215,0,.08)}
+.pill.r{border-color:#ff5a5a;color:#ff7a7a}
+h1{font-family:'Bebas Neue';font-size:44px;letter-spacing:2px;line-height:1}
+h2{font-family:'Bebas Neue';font-size:28px;letter-spacing:2px;margin:24px 0 10px}
+.mut{color:var(--t2)}
+.sm{font-size:12px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:16px;margin:12px 0}
+.card.glow{border-color:var(--v);box-shadow:0 0 40px rgba(123,47,255,.25)}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:52px;border-radius:12px;border:0;font:700 15px 'DM Sans';letter-spacing:.5px;background:var(--v);color:#fff;cursor:pointer;margin-top:10px}
+.btn.ghost{background:rgba(255,255,255,.06);color:#fff}
+.btn.line{background:transparent;border:1px solid var(--v);color:#c9a8ff}
+.btn.g{background:var(--g);color:#000}
+.btn.sm{height:38px;font-size:13px;width:auto;padding:0 14px;margin:4px 4px 0 0;display:inline-flex}
+.btn:disabled{opacity:.4}
+input,textarea,select{width:100%;background:var(--el);border:1px solid var(--bd);border-radius:12px;color:#fff;font:15px 'DM Sans';padding:13px;margin-top:6px}
+label{display:block;margin-top:12px;font-size:13px;color:var(--t2)}
+.row{display:flex;gap:10px}.row>*{flex:1}
+.big{font-family:'Bebas Neue';font-size:52px;letter-spacing:2px;line-height:1}
+.stat{background:var(--el);border-radius:14px;padding:12px;text-align:center}
+.stat b{display:block;font-family:'Bebas Neue';font-size:30px;letter-spacing:1px}
+.stat span{font-family:'Space Mono';font-size:10px;letter-spacing:1px;color:var(--t2);text-transform:uppercase}
+.nav{position:fixed;left:0;right:0;bottom:0;background:rgba(6,6,8,.92);backdrop-filter:blur(16px);border-top:1px solid var(--bd);display:flex;justify-content:space-around;padding:8px 0 calc(8px + env(safe-area-inset-bottom));z-index:20}
+.nav a{display:flex;flex-direction:column;align-items:center;font-size:10px;color:var(--t2);font-family:'Space Mono';letter-spacing:1px;min-width:60px}
+.nav a i{font-style:normal;font-size:22px}
+.nav a.on{color:#c9a8ff}
+.nav a.rec i{background:var(--v);width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-top:-18px;box-shadow:0 0 24px rgba(123,47,255,.6)}
+.feed{position:fixed;inset:0;overflow-y:scroll;scroll-snap-type:y mandatory;background:#000;z-index:5}
+.slide{height:100vh;height:100dvh;scroll-snap-align:start;position:relative;display:flex;align-items:center;justify-content:center}
+.slide video{width:100%;height:100%;object-fit:cover}
+.ov{position:absolute;left:0;right:0;bottom:0;padding:20px 16px calc(90px + env(safe-area-inset-bottom));background:linear-gradient(transparent,rgba(0,0,0,.85))}
+.hud{position:fixed;top:calc(12px + env(safe-area-inset-top));left:12px;right:12px;display:flex;justify-content:space-between;z-index:10;pointer-events:none}
+.hud>*{pointer-events:auto}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:110px;background:#1b1b2b;border:1px solid var(--bd);padding:10px 16px;border-radius:12px;z-index:99;font-size:14px;max-width:90%;text-align:center}
+.reelrow{display:flex;gap:12px;align-items:flex-start}
+.reelrow video{width:96px;height:170px;object-fit:cover;border-radius:10px;background:#000;flex:none}
+.qr{background:#fff;border-radius:16px;padding:14px;display:inline-block}
+.qr img{display:block;width:100%;height:auto}
+.center{text-align:center}
+.step{display:flex;gap:10px;align-items:center;padding:8px 0;color:var(--t2)}
+.step.ok{color:var(--g)}.step.bad{color:#ff7a7a}
+.check{display:flex;gap:10px;align-items:flex-start;margin-top:14px;font-size:14px}
+.check input{width:22px;height:22px;margin:0;flex:none}
+.prog{height:6px;background:var(--el);border-radius:6px;overflow:hidden;margin-top:8px}.prog i{display:block;height:100%;background:linear-gradient(90deg,var(--v),var(--p))}
+.movie{position:fixed;inset:0;background:#000;z-index:30;display:flex;align-items:center;justify-content:center}
+.movie video{width:100%;height:100%;object-fit:contain}
+.title{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:#000;padding:24px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+const SB_URL = 'https://npprahzhjjujhyxznmbq.supabase.co';
+const SB_KEY = 'sb_publishable_i6vk6IQByH16Pj1YlSE9aA_5UrkK0NK';
+const sb = createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
+const BUCKET = 'vibehai-media';
+const BASE = location.origin + location.pathname;
+const $ = s => document.querySelector(s);
+const app = $('#app');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pub = p => sb.storage.from(BUCKET).getPublicUrl(p).data.publicUrl;
+const fmtD = d => new Date(d).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+function toast(m, ms = 2600) { const t = document.createElement('div'); t.className = 'toast'; t.textContent = m; document.body.appendChild(t); setTimeout(() => t.remove(), ms); }
+
+// ---------- device identity (no app, no login) ----------
+function uuid() { return crypto.randomUUID ? crypto.randomUUID() : ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)); }
+let DEV = JSON.parse(localStorage.getItem('vh_dev') || 'null');
+if (!DEV) { const b = new Uint8Array(24); crypto.getRandomValues(b); DEV = { id: uuid(), secret: Array.from(b, x => x.toString(16).padStart(2, '0')).join('') }; localStorage.setItem('vh_dev', JSON.stringify(DEV)); }
+const A = () => ({ p_device: DEV.id, p_secret: DEV.secret });
+async function rpc(fn, args = {}, auth = true) {
+  const { data, error } = await sb.rpc(fn, auth ? { ...A(), ...args } : args);
+  if (error) throw new Error(error.message);
+  return data;
+}
+const ready = rpc('vh_register').catch(e => toast('Network issue: ' + e.message));
+let ME = null;
+async function me() { await ready; ME = await rpc('vh_me'); return ME; }
+
+// ---------- routing ----------
+function route() {
+  const h = location.hash.replace(/^#\/?/, '');
+  const [path, qs] = h.split('?');
+  const parts = path.split('/').filter(Boolean);
+  return { parts, q: new URLSearchParams(qs || '') };
+}
+let cleanup = [];
+function onLeave(fn) { cleanup.push(fn); }
+window.addEventListener('hashchange', render);
+const nav = (on) => `<nav class="nav">
+  <a href="#/" class="${on==='home'?'on':''}"><i>🏠</i>HOME</a>
+  <a href="#/feed" class="${on==='feed'?'on':''}"><i>▶️</i>FEED</a>
+  <a href="#/post" class="rec ${on==='post'?'on':''}"><i>🎬</i>POST</a>
+  <a href="#/me" class="${on==='me'?'on':''}"><i>💸</i>WALLET</a>
+</nav>`;
+
+async function render() {
+  cleanup.forEach(f => { try { f() } catch (e) {} }); cleanup = [];
+  window.scrollTo(0, 0);
+  const { parts, q } = route();
+  try {
+    if (!parts.length) return await home();
+    switch (parts[0]) {
+      case 'e': return await eventEntry(parts[1], q.get('c'));
+      case 'feed': return await feed(q.get('e'));
+      case 'post': return await post(parts[1]);
+      case 'me': return await wallet();
+      case 'movie': return await movie(parts[1]);
+      case 'admin': return await admin(parts[1]);
+      case 'screen': return await screen(parts[1]);
+      default: return await home();
+    }
+  } catch (e) { app.innerHTML = `<div class="wrap"><div class="top"><a href="#/" class="logo">⚡ VIBEHAI</a></div><div class="card">Something went wrong: ${esc(e.message)}</div><button class="btn" onclick="location.reload()">Reload</button></div>`; }
+}
+
+// ---------- home ----------
+async function home() {
+  app.innerHTML = `<div class="wrap"><div class="top"><span class="logo">⚡ VIBEHAI</span><span class="pill v">BETA</span></div><p class="mut">Loading…</p></div>${nav('home')}`;
+  await ready;
+  const [events, m] = await Promise.all([rpc('vh_events_list', {}, false), me()]);
+  const now = Date.now();
+  const live = events.filter(e => new Date(e.ends_at) > now);
+  const past = events.filter(e => new Date(e.ends_at) <= now);
+  const card = e => `<div class="card"><div class="row" style="align-items:center"><div><b>${esc(e.name)}</b><div class="mut sm">${esc(e.venue || '')} · ${fmtD(e.starts_at)}</div></div>
+    <div style="flex:none">${new Date(e.ends_at) > now ? (new Date(e.starts_at) <= now ? '<span class="pill r">● LIVE</span>' : '<span class="pill">SOON</span>') : '<span class="pill">ENDED</span>'}</div></div>
+    <div><a class="btn sm ghost" href="#/feed?e=${e.slug}">▶ ${e.reel_count} reels</a>${new Date(e.ends_at) <= now ? `<a class="btn sm line" href="#/movie/${e.slug}">🎬 Aftermovie</a>` : ''}</div></div>`;
+  app.innerHTML = `<div class="wrap">
+    <div class="top"><span class="logo">⚡ VIBEHAI</span><a href="#/me" class="pill gold">⏱ ${m.minutes} MIN</a></div>
+    <h1>Film the moment.<br>Get paid for it.</h1>
+    <p class="mut" style="margin-top:10px">Scan the VibeHai QR at the venue, post your reel, and the best ones get reposted on our Instagram and paid. Watch reels to earn Vibe Minutes.</p>
+    <div class="card glow"><div class="row center">
+      <div><div class="big">📲</div><div class="sm mut">Scan QR at venue</div></div>
+      <div><div class="big">🎬</div><div class="sm mut">Post your reel</div></div>
+      <div><div class="big">💸</div><div class="sm mut">Get picked, get paid</div></div></div></div>
+    ${m.checkins.filter(c => new Date(c.ends_at).getTime() + 864e5 > now).map(c => `<a class="btn" href="#/post/${c.slug}">🎬 Post a reel from ${esc(c.name)}</a>`).join('')}
+    <h2>Events</h2>
+    ${live.map(card).join('') || '<p class="mut">No live events right now.</p>'}
+    ${past.length ? '<h2>Past events</h2>' + past.map(card).join('') : ''}
+    <p class="mut sm center" style="margin-top:30px">100% fan-filmed · location-verified · Yaar, Vibe Hai ⚡</p>
+  </div>${nav('home')}`;
+}
+
+// ---------- event entry + verification ----------
+function getPos() {
+  return new Promise((res, rej) => {
+    if (!navigator.geolocation) return rej(new Error('Location not supported on this browser'));
+    navigator.geolocation.getCurrentPosition(p => res(p.coords), e => rej(new Error(e.code === 1 ? 'Location permission denied. Allow location for this site in Settings → Safari → Location.' : 'Could not get your location. Try again outdoors or near a window.')), { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+  });
+}
+async function eventEntry(slug, code) {
+  await ready;
+  const ev = await rpc('vh_event', { p_slug: slug }, false);
+  if (!ev) { app.innerHTML = `<div class="wrap"><div class="top"><a href="#/" class="logo">⚡ VIBEHAI</a></div><div class="card">This QR is invalid or the event was removed.</div></div>${nav('')}`; return; }
+  const m = await me();
+  const already = m.checkins.some(c => c.slug === slug);
+  app.innerHTML = `<div class="wrap">
+    <div class="top"><a href="#/" class="logo">⚡ VIBEHAI</a><span class="pill g">⚡ VERIFIED EVENT</span></div>
+    <div class="card glow center" style="padding:28px 16px">
+      <h1>${esc(ev.name)}</h1>
+      <p class="mut" style="margin-top:6px">${esc(ev.venue || '')} · ${fmtD(ev.starts_at)}</p>
+    </div>
+    <div id="vbox">${already ? `<div class="card"><div class="step ok">✅ You're verified at this event</div></div><a class="btn" href="#/post/${slug}">🎬 Post your reel →</a>` : `
+      <div class="card">
+        <b>Prove you're here</b>
+        <p class="mut sm" style="margin-top:4px">We check your location against the venue and the live code in this QR. Your location is used only for this check.</p>
+        <div id="steps"></div>
+        <label class="check"><input type="checkbox" id="agree"> <span>I'm 18+ (or have a parent's OK), and I agree VibeHai may show my reels in the app, repost them on its Instagram with credit to me, and use them in the event aftermovie.</span></label>
+      </div>
+      <button class="btn" id="go">📍 Verify &amp; enter creator mode</button>`}
+    </div>
+    <a class="btn ghost" href="#/feed?e=${slug}">Just browse reels →</a>
+    <p class="mut sm center" style="margin-top:16px">No app download needed · Works in your browser</p>
+  </div>${nav('')}`;
+  const go = $('#go'); if (!go) return;
+  go.onclick = async () => {
+    if (!$('#agree').checked) return toast('Tick the box to continue');
+    if (!code) return toast('Scan the QR on the venue screen to get the live code');
+    const st = $('#steps'); go.disabled = true;
+    st.innerHTML = `<div class="step">⏳ Getting your location…</div>`;
+    try {
+      const c = await getPos();
+      st.innerHTML = `<div class="step ok">✅ Location found (±${Math.round(c.accuracy)} m)</div><div class="step">⏳ Checking venue + live code…</div>`;
+      const r = await rpc('vh_checkin', { p_slug: slug, p_lat: c.latitude, p_lng: c.longitude, p_accuracy: c.accuracy, p_code: code });
+      if (r.ok) {
+        st.innerHTML = `<div class="step ok">✅ Location found (±${Math.round(c.accuracy)} m)</div><div class="step ok">✅ At the venue · live code valid</div>`;
+        go.outerHTML = `<a class="btn g" href="#/post/${slug}">🎬 You're in. Post your reel →</a>`;
+      } else { st.innerHTML += `<div class="step bad">❌ ${esc(r.reason)}</div>`; go.disabled = false; go.textContent = 'Try again'; }
+    } catch (e) { st.innerHTML = `<div class="step bad">❌ ${esc(e.message)}</div>`; go.disabled = false; go.textContent = 'Try again'; }
+  };
+}
+
+// ---------- post a reel ----------
+function videoDuration(file) {
+  return new Promise(res => { const v = document.createElement('video'); v.preload = 'metadata'; v.onloadedmetadata = () => { res(v.duration); URL.revokeObjectURL(v.src); }; v.onerror = () => res(0); v.src = URL.createObjectURL(file); });
+}
+async function post(slug) {
+  const m = await me();
+  const open = m.checkins.filter(c => new Date(c.ends_at).getTime() + 864e5 > Date.now());
+  if (!slug && open.length === 1) slug = open[0].slug;
+  if (!slug) {
+    app.innerHTML = `<div class="wrap"><div class="top"><a href="#/" class="logo">⚡ VIBEHAI</a></div><h1>Post a reel</h1>
+      ${open.length ? '<p class="mut" style="margin:10px 0">Pick the event:</p>' + open.map(c => `<a class="btn line" href="#/post/${c.slug}">${esc(c.name)}</a>`).join('') :
+      `<div class="card"><b>Scan first 📲</b><p class="mut" style="margin-top:6px">Only fans who are really at the event can post. Scan the VibeHai QR on the venue screen to unlock posting.</p></div>`}
+    </div>${nav('post')}`; return;
+  }
+  if (!open.some(c => c.slug === slug)) { location.hash = '#/post'; return; }
+  const ev = open.find(c => c.slug === slug);
+  app.innerHTML = `<div class="wrap"><div class="top"><a href="#/" class="logo">⚡ VIBEHAI</a><span class="pill g">✅ VERIFIED</span></div>
+    <h1>Post from<br>${esc(ev.name)}</h1>
+    <div class="row" style="margin-top:14px">
+      <label class="btn" style="margin:0">🎥 Record<input type="file" accept="video/*" capture="environment" id="rec" hidden></label>
+      <label class="btn ghost" style="margin:0">📁 Upload<input type="file" accept="video/*" id="up" hidden></label>
+    </div>
+    <p class="mut sm" style="margin-top:8px">Up to 60 seconds and 50 MB. Vertical looks best.</p>
+    <div id="prev"></div>
+  </div>${nav('post')}`;
+  let file = null, source = 'recorded';
+  const pick = async (f, s) => {
+    if (!f) return;
+    if (f.size > 50 * 1024 * 1024) return toast('That video is over 50 MB. Trim it and try again.');
+    const d = await videoDuration(f);
+    if (d > 61) return toast(`That's ${Math.round(d)} s. Keep it under 60 seconds.`);
+    file = f; source = s;
+    $('#prev').innerHTML = `<div class="card"><video src="${URL.createObjectURL(f)}" playsinline controls loop style="width:100%;max-height:60vh;border-radius:12px;background:#000"></video>
+      <label>Caption</label><textarea id="cap" maxlength="200" rows="2" placeholder="Describe this moment…"></textarea>
+      <label class="check"><input type="checkbox" id="real"> <span>This is real footage I filmed at this event. No AI edits.</span></label>
+      <button class="btn" id="send">Submit for review →</button><div id="pg"></div></div>`;
+    $('#send').onclick = submit;
+  };
+  $('#rec').onchange = e => pick(e.target.files[0], 'recorded');
+  $('#up').onchange = e => pick(e.target.files[0], 'uploaded');
+  async function submit() {
+    if (!$('#real').checked) return toast('Confirm the footage is real to submit');
+    const b = $('#send'); b.disabled = true; b.textContent = 'Uploading…';
+    $('#pg').innerHTML = '<div class="prog"><i style="width:30%"></i></div>';
+    try {
+      const ext = (file.name.split('.').pop() || 'mp4').toLowerCase().replace(/[^a-z0-9]/g, '') || 'mp4';
+      const path = `reels/${DEV.id}/${Date.now()}.${ext}`;
+      const { error } = await sb.storage.from(BUCKET).upload(path, file, { contentType: file.type || 'video/mp4', upsert: false });
+      if (error) throw error;
+      $('#pg').innerHTML = '<div class="prog"><i style="width:85%"></i></div>';
+      await rpc('vh_submit_reel', { p_slug: slug, p_path: path, p_caption: $('#cap').value, p_source: source, p_real: true });
+      app.querySelector('.wrap').innerHTML = `<div class="top"><a href="#/" class="logo">⚡ VIBEHAI</a></div>
+        <div class="card glow center" style="padding:30px 16px"><div class="big">⏳</div><h2 style="margin-top:6px">Under review</h2>
+        <div class="step ok" style="justify-content:center">✅ Location verified at the venue</div>
+        <div class="step" style="justify-content:center">⏳ Team review — usually a few hours</div>
+        <p class="mut sm">If your reel is picked, we repost it on @originalvibehai with credit and you get paid to your UPI.</p></div>
+        <a class="btn" href="#/me">Add your UPI + Instagram →</a><a class="btn ghost" href="#/post/${slug}">Post another</a><a class="btn ghost" href="#/feed">Watch reels &amp; earn minutes</a>`;
+    } catch (e) { toast('Upload failed: ' + e.message, 4000); b.disabled = false; b.textContent = 'Try again'; }
+  }
+}
+
+// ---------- feed + vibe minutes ----------
+async function feed(slug) {
+  await ready;
+  const [items, m] = await Promise.all([rpc('vh_feed', { p_slug: slug || null }, false), me()]);
+  if (!items.length) { app.innerHTML = `<div class="wrap"><div class="top"><a href="#/" class="logo">⚡ VIBEHAI</a></div><div class="card center"><div class="big">🎬</div><p class="mut">No approved reels here yet. Check back after the event.</p></div></div>${nav('feed')}`; return; }
+  let mins = m.minutes;
+  app.innerHTML = `<div class="feed" id="fd">${items.map(r => `<div class="slide" data-id="${r.id}">
+      <video src="${pub(r.video_path)}" playsinline loop muted preload="metadata"></video>
+      <div class="ov">${r.featured ? '<span class="pill gold">⭐ FEATURED ON INSTAGRAM</span> ' : ''}<span class="pill g">✅ CROWD-VERIFIED</span>
+        <div style="margin-top:8px;font-weight:700">@${esc(r.creator)}</div>
+        <div class="sm">${esc(r.caption || '')}</div>
+        <div class="mut sm">${esc(r.event)}${r.venue ? ' · ' + esc(r.venue) : ''} · ${r.views} views</div></div></div>`).join('')}</div>
+    <div class="hud"><a href="#/" class="logo" style="font-size:22px">⚡ VIBEHAI</a><span><button class="pill" id="snd" style="background:rgba(0,0,0,.5)">🔇 TAP FOR SOUND</button> <a href="#/me" class="pill gold" id="mn" style="background:rgba(0,0,0,.5)">⏱ ${mins} MIN</a></span></div>${nav('feed')}`;
+  let muted = true;
+  const vids = [...document.querySelectorAll('.slide video')];
+  $('#snd').onclick = () => { muted = !muted; vids.forEach(v => v.muted = muted); $('#snd').textContent = muted ? '🔇 TAP FOR SOUND' : '🔊 SOUND ON'; };
+  let cur = null, acc = 0, last = performance.now(), sentFor = {};
+  const io = new IntersectionObserver(es => es.forEach(e => {
+    const v = e.target.querySelector('video');
+    if (e.isIntersecting && e.intersectionRatio > .6) { cur = e.target.dataset.id; v.muted = muted; v.play().catch(() => {}); }
+    else { v.pause(); }
+  }), { threshold: [0, .6, 1] });
+  document.querySelectorAll('.slide').forEach(s => io.observe(s));
+  const tick = setInterval(async () => {
+    const now = performance.now(); const dt = (now - last) / 1000; last = now;
+    const v = vids.find(x => x.closest('.slide').dataset.id === cur);
+    if (document.visibilityState === 'visible' && v && !v.paused) acc += dt;
+    if (acc >= 10 && cur) {
+      const s = Math.floor(acc); acc -= s;
+      try { const r = await rpc('vh_watch', { p_reel: cur, p_seconds: s, p_view: !sentFor[cur] }); sentFor[cur] = true;
+        if (r.minutes > mins) { mins = r.minutes; const el = $('#mn'); if (el) el.textContent = `⏱ ${mins} MIN`; toast('+1 Vibe Minute ⏱', 1400); } } catch (e) {}
+    }
+  }, 1000);
+  onLeave(() => { clearInterval(tick); io.disconnect(); });
+}
+
+// ---------- wallet ----------
+async function wallet() {
+  const m = await me();
+  const badge = r => r.status === 'featured' ? '<span class="pill gold">⭐ PICKED</span>' : r.status === 'approved' ? '<span class="pill g">LIVE</span>' : r.status === 'rejected' ? '<span class="pill r">NOT APPROVED</span>' : '<span class="pill">IN REVIEW</span>';
+  const pay = r => r.payout_inr ? `<div class="sm" style="margin-top:6px;color:var(--g)">₹${r.payout_inr} · ${r.payout_status === 'paid' ? 'paid to UPI' : 'payout due'}</div>` : '';
+  app.innerHTML = `<div class="wrap"><div class="top"><a href="#/" class="logo">⚡ VIBEHAI</a>${m.is_admin ? '<a class="pill v" href="#/admin">ADMIN</a>' : ''}</div>
+    <h1>Your wallet</h1>
+    <div class="row" style="margin-top:14px">
+      <div class="stat"><b style="color:var(--g)">₹${m.earned_inr}</b><span>Earned</span></div>
+      <div class="stat"><b>₹${m.paid_inr}</b><span>Paid out</span></div>
+      <div class="stat"><b style="color:var(--gold)">${m.minutes}</b><span>Vibe min</span></div>
+    </div>
+    <p class="mut sm" style="margin-top:8px">Vibe Minutes: 1 minute of watching = 1 minute. Spend 18 to unlock an event aftermovie. Minutes aren't cash and can't be withdrawn.</p>
+    <h2>Payout details</h2>
+    <div class="card">
+      <label>Name</label><input id="nm" value="${esc(m.name || '')}" placeholder="Your name">
+      <label>UPI ID (for payouts)</label><input id="upi" value="${esc(m.upi || '')}" placeholder="name@okaxis" autocapitalize="off">
+      <label>Instagram handle (for credit)</label><input id="ig" value="${esc(m.instagram || '')}" placeholder="yourhandle" autocapitalize="off">
+      <button class="btn" id="sv">Save</button>
+    </div>
+    <h2>Your reels</h2>
+    ${m.reels.map(r => `<div class="card reelrow"><video src="${pub(r.video_path)}#t=0.5" muted playsinline preload="metadata"></video><div><b>${esc(r.event)}</b><div style="margin-top:6px">${badge(r)}</div>${pay(r)}<div class="mut sm" style="margin-top:6px">${fmtD(r.created_at)}</div></div></div>`).join('') || '<p class="mut">No reels yet. Scan the QR at your next event.</p>'}
+    <p class="mut sm center" style="margin-top:24px">Your account lives on this phone's browser. Don't clear Safari data, or you'll lose access.</p>
+  </div>${nav('me')}`;
+  $('#sv').onclick = async () => { try { await rpc('vh_save_profile', { p_name: $('#nm').value.trim(), p_upi: $('#upi').value.trim(), p_instagram: $('#ig').value.trim().replace(/^@/, '') }); toast('Saved ✅'); } catch (e) { toast(e.message); } };
+}
+
+// ---------- aftermovie ----------
+async function movie(slug) {
+  await ready;
+  const [ev, m] = await Promise.all([rpc('vh_event', { p_slug: slug }, false), me()]);
+  if (!ev) { location.hash = '#/'; return; }
+  const unlocked = m.unlocks.includes(slug) || m.is_admin;
+  if (!unlocked) {
+    app.innerHTML = `<div class="wrap"><div class="top"><a href="#/" class="logo">⚡ VIBEHAI</a><span class="pill gold">⏱ ${m.minutes} MIN</span></div>
+      <div class="card glow center" style="padding:28px 16px"><div class="big">🎬</div><h1>${esc(ev.name)}</h1><p class="mut">Official aftermovie · ${ev.reel_count} fan reels</p>
+      <p class="sm" style="margin-top:10px">100% fan-filmed · location-verified · auto-edited</p></div>
+      <button class="btn" id="ul" ${m.minutes < 18 ? 'disabled' : ''}>⏱ Unlock with 18 Vibe Minutes</button>
+      ${m.minutes < 18 ? `<p class="mut sm center" style="margin-top:6px">You have ${m.minutes}. Watch ${18 - m.minutes} more minutes of reels to unlock free.</p><a class="btn line" href="#/feed">▶ Watch reels &amp; earn minutes</a>` : ''}
+      <button class="btn ghost" disabled>Pay ₹18 · coming soon</button>
+    </div>${nav('')}`;
+    const ul = $('#ul'); if (ul) ul.onclick = async () => { const r = await rpc('vh_unlock', { p_slug: slug }); if (r.ok) movie(slug); else toast(r.reason); };
+    return;
+  }
+  const items = await rpc('vh_feed', { p_slug: slug }, false);
+  if (!items.length) { app.innerHTML = `<div class="wrap"><div class="top"><a href="#/" class="logo">⚡ VIBEHAI</a></div><div class="card">No approved reels yet for this event.</div></div>${nav('')}`; return; }
+  const list = [...items].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+  app.innerHTML = `<div class="movie"><video id="mv" playsinline></video><div class="title" id="tt"><div class="logo" style="font-size:20px">⚡ VIBEHAI PRESENTS</div><h1 style="margin-top:10px">${esc(ev.name)}</h1><p class="mut">${esc(ev.venue || '')}</p><p class="sm" style="margin-top:14px">Filmed by ${new Set(list.map(r => r.creator)).size} fans who were really there</p><button class="btn" id="play" style="max-width:260px">▶ Play aftermovie</button></div>
+    <a href="#/" class="pill" style="position:absolute;top:calc(14px + env(safe-area-inset-top));right:14px;background:rgba(0,0,0,.6);z-index:3">✕ CLOSE</a>
+    <div id="cr" style="position:absolute;left:14px;bottom:calc(24px + env(safe-area-inset-bottom));z-index:2" class="pill"></div></div>`;
+  const v = $('#mv'); let i = 0;
+  const CLIP = 6;
+  const next = () => {
+    if (i >= list.length) { $('#tt').style.display = 'flex'; $('#tt').innerHTML = `<h1>Yaar, Vibe Hai ⚡</h1><p class="mut" style="margin-top:8px">Credits</p><p class="sm">${[...new Set(list.map(r => '@' + esc(r.creator)))].join(' · ')}</p><a class="btn" href="#/" style="max-width:260px">Done</a>`; return; }
+    const r = list[i++]; v.src = pub(r.video_path); $('#cr').textContent = '🎥 @' + r.creator;
+    v.onloadedmetadata = () => { const st = v.duration > CLIP + 2 ? Math.max(0, v.duration / 2 - CLIP / 2) : 0; v.currentTime = st; v.play(); v.ontimeupdate = () => { if (v.currentTime >= st + CLIP) { v.ontimeupdate = null; next(); } }; };
+    v.onended = next; v.onerror = next;
+  };
+  $('#play').onclick = () => { $('#tt').style.display = 'none'; next(); };
+}
+
+// ---------- admin ----------
+async function admin(tab) {
+  let m = await me();
+  if (!m.is_admin) {
+    app.innerHTML = `<div class="wrap"><div class="top"><a href="#/" class="logo">⚡ VIBEHAI</a></div><h1>Organiser admin</h1>
+      <div class="card"><p class="mut">The first phone to claim admin becomes the VibeHai admin. Others get nothing.</p><button class="btn" id="cl">Claim admin on this phone</button></div></div>${nav('')}`;
+    $('#cl').onclick = async () => { const r = await rpc('vh_claim_admin'); if (r.ok) { toast('You are the admin ✅'); admin(); } else toast('An admin already exists'); };
+    return;
+  }
+  tab = tab || 'review';
+  const t = (k, l) => `<a class="btn sm ${tab === k ? '' : 'ghost'}" href="#/admin/${k}">${l}</a>`;
+  app.innerHTML = `<div class="wrap"><div class="top"><a href="#/" class="logo">⚡ VIBEHAI</a><span class="pill v">ADMIN</span></div>
+    <div id="stats" class="row"></div><div style="margin-top:10px">${t('review', 'Review')}${t('picked', 'Picked & payouts')}${t('events', 'Events')}</div><div id="body"><p class="mut" style="margin-top:14px">Loading…</p></div></div>${nav('')}`;
+  rpc('vh_admin_stats').then(s => { $('#stats').innerHTML = `<div class="stat"><b>${s.fans}</b><span>Fans</span></div><div class="stat"><b>${s.reels}</b><span>Reels</span></div><div class="stat"><b>${s.pending}</b><span>To review</span></div><div class="stat"><b style="color:var(--g)">₹${s.payout_due}</b><span>Due</span></div>`; });
+  const body = $('#body');
+  if (tab === 'events') {
+    const evs = await rpc('vh_events_list', {}, false);
+    const d0 = new Date(); d0.setMinutes(0, 0, 0); const loc = d => new Date(d.getTime() - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 16);
+    body.innerHTML = `<h2>Register an event</h2><div class="card">
+      <label>Event name</label><input id="en" placeholder="Harda Garba Night 2026">
+      <label>Venue</label><input id="ev" placeholder="Nehru Stadium, Harda">
+      <div class="row"><div><label>Starts</label><input id="es" type="datetime-local" value="${loc(d0)}"></div><div><label>Ends</label><input id="ee" type="datetime-local" value="${loc(new Date(d0.getTime() + 4 * 36e5))}"></div></div>
+      <div class="row"><div><label>Latitude</label><input id="la" inputmode="decimal"></div><div><label>Longitude</label><input id="lo" inputmode="decimal"></div></div>
+      <button class="btn sm ghost" id="here">📍 Use my current location</button>
+      <label>Allowed radius (metres)</label><input id="ra" inputmode="numeric" value="800">
+      <button class="btn" id="mk">Register event</button></div>
+      <h2>Your events</h2>${evs.map(e => `<div class="card"><b>${esc(e.name)}</b><div class="mut sm">${esc(e.venue || '')} · ${fmtD(e.starts_at)} → ${fmtD(e.ends_at)}</div>
+        <a class="btn sm" href="#/screen/${e.slug}">📺 Venue screen QR</a><a class="btn sm ghost" href="#/feed?e=${e.slug}">▶ Reels (${e.reel_count})</a><a class="btn sm ghost" href="#/movie/${e.slug}">🎬 Aftermovie</a></div>`).join('') || '<p class="mut">No events yet.</p>'}`;
+    $('#here').onclick = async () => { try { const c = await getPos(); $('#la').value = c.latitude.toFixed(6); $('#lo').value = c.longitude.toFixed(6); toast(`Got it (±${Math.round(c.accuracy)} m)`); } catch (e) { toast(e.message); } };
+    $('#mk').onclick = async () => {
+      const name = $('#en').value.trim(), lat = parseFloat($('#la').value), lng = parseFloat($('#lo').value);
+      if (!name || isNaN(lat) || isNaN(lng)) return toast('Name, latitude and longitude are needed');
+      const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) + '-' + Math.random().toString(36).slice(2, 6);
+      try { await rpc('vh_admin_create_event', { p_slug: slug, p_name: name, p_venue: $('#ev').value.trim(), p_lat: lat, p_lng: lng, p_radius: parseInt($('#ra').value) || 800, p_starts: new Date($('#es').value).toISOString(), p_ends: new Date($('#ee').value).toISOString() }); toast('Event registered ✅'); admin('events'); } catch (e) { toast(e.message); }
+    };
+    return;
+  }
+  const all = await rpc('vh_admin_reels', { p_status: null });
+  const list = tab === 'review' ? all.filter(r => r.status === 'pending') : all.filter(r => r.status === 'featured');
+  body.innerHTML = (tab === 'review' ? '<h2>Waiting for review</h2>' : '<h2>Picked reels</h2><p class="mut sm">Repost each on Instagram with the caption, then pay the fan and mark it paid.</p>') +
+    (list.map(r => `<div class="card" data-id="${r.id}">
+      <video src="${pub(r.video_path)}" controls playsinline preload="metadata" style="width:100%;max-height:60vh;border-radius:12px;background:#000"></video>
+      <div style="margin-top:8px"><b>${esc(r.event)}</b> · ${r.source === 'uploaded' ? '<span class="pill r">UPLOADED FROM GALLERY</span>' : '<span class="pill g">RECORDED LIVE</span>'} <span class="pill">${r.distance_m ?? '?'} m from venue</span></div>
+      <div class="sm" style="margin-top:6px">${esc(r.caption || '')}</div>
+      <div class="mut sm">${esc(r.creator_name || 'No name')} · ${r.instagram ? '@' + esc(r.instagram) : 'no Instagram'} · UPI: ${esc(r.upi || 'not added')} · ${fmtD(r.created_at)}</div>
+      ${tab === 'review' ? `<div class="row" style="margin-top:8px"><div><label>Payout if picked (₹)</label><input class="po" inputmode="numeric" value="100"></div></div>
+        <div><button class="btn sm g act" data-a="feature">⭐ Pick + pay</button><button class="btn sm act" data-a="approve">✅ Approve</button><button class="btn sm ghost act" data-a="reject">❌ Reject</button></div>` :
+      `<div class="sm" style="margin-top:6px;color:var(--g)">₹${r.payout_inr} · ${r.payout_status === 'paid' ? 'PAID' : 'DUE'} · ${r.views} views</div>
+        <div><a class="btn sm" href="${pub(r.video_path)}" download target="_blank">⬇ Video</a><button class="btn sm ghost cp">📋 Copy IG caption</button>${r.payout_status !== 'paid' ? '<button class="btn sm g act" data-a="paid">Mark paid</button>' : ''}</div>`}
+    </div>`).join('') || '<p class="mut">Nothing here right now.</p>');
+  body.querySelectorAll('.act').forEach(b => b.onclick = async () => {
+    const c = b.closest('.card'), id = c.dataset.id, a = b.dataset.a;
+    const po = parseInt(c.querySelector('.po')?.value) || 0;
+    const args = a === 'feature' ? { p_status: 'featured', p_payout: po, p_payout_status: po ? 'due' : 'none' } : a === 'approve' ? { p_status: 'approved', p_payout: null, p_payout_status: null } : a === 'reject' ? { p_status: 'rejected', p_payout: null, p_payout_status: null } : { p_status: null, p_payout: null, p_payout_status: 'paid' };
+    try { await rpc('vh_admin_set_reel', { p_reel: id, ...args }); c.remove(); toast('Done ✅'); } catch (e) { toast(e.message); }
+  });
+  body.querySelectorAll('.cp').forEach(b => b.onclick = () => {
+    const r = list.find(x => x.id === b.closest('.card').dataset.id);
+    const txt = `${r.caption || ''}\n\n🎥 Filmed by ${r.instagram ? '@' + r.instagram : (r.creator_name || 'a VibeHai fan')} at ${r.event}\n✅ Location-verified on VibeHai\n\n#VibeHai #YaarVibeHai #EarnFromReels`;
+    navigator.clipboard.writeText(txt).then(() => toast('Caption copied'), () => prompt('Copy caption', txt));
+  });
+}
+
+// ---------- venue screen: rotating QR ----------
+async function screen(slug) {
+  const m = await me(); if (!m.is_admin) { location.hash = '#/admin'; return; }
+  const ev = await rpc('vh_event', { p_slug: slug }, false);
+  app.innerHTML = `<div class="wrap center" style="padding-top:30px"><div class="logo" style="font-size:34px">⚡ VIBEHAI</div><h1 style="margin-top:8px">${esc(ev.name)}</h1>
+    <p class="mut">Scan to post your reel. The best get paid 💸</p>
+    <div class="qr" style="margin-top:18px;width:min(86vw,420px)"><div id="q"></div></div>
+    <p class="pill" style="margin-top:14px">CODE <b id="cd" style="color:#fff">·····</b> · REFRESHES IN <span id="sl">–</span>s</p>
+    <p class="mut sm" style="margin-top:16px">Keep this screen open at the venue. The code changes every 2 minutes, so a photo of the QR stops working.</p>
+    <a class="btn ghost" href="#/admin/events" style="max-width:260px;margin:20px auto 0">← Back</a></div>`;
+  let left = 0, timer;
+  const draw = async () => {
+    try {
+      const r = await rpc('vh_admin_code', { p_slug: slug });
+      const url = `${BASE}#/e/${slug}?c=${r.code}`;
+      const qr = qrcode(0, 'M'); qr.addData(url); qr.make();
+      $('#q').innerHTML = qr.createImgTag(10, 0); $('#cd').textContent = r.code; left = r.seconds_left;
+    } catch (e) { toast(e.message); }
+  };
+  await draw();
+  timer = setInterval(() => { left--; const el = $('#sl'); if (el) el.textContent = Math.max(left, 0); if (left <= 0) draw(); }, 1000);
+  let wl = null; try { wl = await navigator.wakeLock?.request('screen'); } catch (e) {}
+  onLeave(() => { clearInterval(timer); wl?.release?.(); });
+}
+
+render();
+</script>
+</body>
+</html>
