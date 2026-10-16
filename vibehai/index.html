@@ -489,7 +489,7 @@ async function admin(tab) {
     return;
   }
   if (tab === 'events') {
-    const evs = await rpc('vh_events_list', {}, false);
+    const evs = await rpc('vh_admin_events');
     const d0 = new Date(); d0.setMinutes(0, 0, 0); const loc = d => new Date(d.getTime() - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 16);
     body.innerHTML = `<h2>Register an event</h2><div class="card">
       <label>Event name</label><input id="en" placeholder="Harda Garba Night 2026">
@@ -500,8 +500,10 @@ async function admin(tab) {
       <button class="btn sm ghost" id="here">📍 Use my current location</button>
       <label>Allowed radius (metres)</label><input id="ra" inputmode="numeric" value="800">
       <button class="btn" id="mk">Register event</button></div>
-      <h2>Your events</h2>${evs.map(e => `<div class="card"><b>${esc(e.name)}</b><div class="mut sm">${esc(e.venue || '')} · ${fmtD(e.starts_at)} → ${fmtD(e.ends_at)}</div>
-        <a class="btn sm" href="#/screen/${e.slug}">📺 Venue screen QR</a><a class="btn sm ghost" href="#/feed?e=${e.slug}">▶ Reels (${e.reel_count})</a><a class="btn sm ghost" href="#/movie/${e.slug}">🎬 Aftermovie</a><button class="btn sm line dash" data-slug="${e.slug}">📊 Dashboard</button><div class="dbox"></div></div>`).join('') || '<p class="mut">No events yet.</p>'}`;
+      <h2>Your events</h2>${evs.map(e => `<div class="card"${e.hidden ? ' style="opacity:.6"' : ''}><b>${esc(e.name)}</b>${e.hidden ? ' <span class="pill r">HIDDEN</span>' : ''}${new Date(e.ends_at) < new Date() ? ' <span class="pill">ENDED</span>' : ''}${e.org_name ? `<div class="mut sm">${esc(e.org_name)}</div>` : ''}<div class="mut sm">${esc(e.venue || '')} · ${fmtD(e.starts_at)} → ${fmtD(e.ends_at)}</div>
+        <a class="btn sm" href="#/screen/${e.slug}">📺 Venue screen QR</a><a class="btn sm ghost" href="#/feed?e=${e.slug}">▶ Reels (${e.reel_count})</a><a class="btn sm ghost" href="#/movie/${e.slug}">🎬 Aftermovie</a><button class="btn sm line dash" data-slug="${e.slug}">📊 Dashboard</button><button class="btn sm ghost hid" data-slug="${e.slug}" data-h="${e.hidden ? 0 : 1}">${e.hidden ? '👁 Unhide' : '🙈 Hide'}</button><button class="btn sm ghost delev" data-slug="${e.slug}" data-name="${esc(e.name)}" style="color:#ff7a7a">🗑 Delete</button><div class="dbox"></div></div>`).join('') || '<p class="mut">No events yet.</p>'}`;
+    body.querySelectorAll('.hid').forEach(b => b.onclick = async () => { try { await rpc('vh_admin_set_event_hidden', { p_slug: b.dataset.slug, p_hidden: b.dataset.h === '1' }); toast(b.dataset.h === '1' ? 'Hidden from fans' : 'Visible again'); admin('events'); } catch (e) { toast(e.message); } });
+    body.querySelectorAll('.delev').forEach(b => b.onclick = async () => { const n = prompt(`This deletes "${b.dataset.name}" with all its reels, check-ins and announcements. It can't be undone.\n\nType DELETE to confirm.`); if (n !== 'DELETE') return; try { await rpc('vh_admin_delete_event', { p_slug: b.dataset.slug }); toast('Event deleted'); admin('events'); } catch (e) { toast(e.message); } });
     body.querySelectorAll('.dash').forEach(b => b.onclick = () => { const box = b.nextElementSibling; if (box.innerHTML) { box.innerHTML = ''; return; } eventDash(b.dataset.slug, box); });
     $('#here').onclick = async () => { try { const c = await getPos(); $('#la').value = c.latitude.toFixed(6); $('#lo').value = c.longitude.toFixed(6); toast(`Got it (±${Math.round(c.accuracy)} m)`); } catch (e) { toast(e.message); } };
     $('#mk').onclick = async () => {
