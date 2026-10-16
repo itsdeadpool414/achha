@@ -224,6 +224,7 @@ async function eventEntry(slug, code) {
       <button class="btn" id="go">📍 Verify &amp; enter creator mode</button>`}
     </div>
     <a class="btn ghost" href="#/feed?e=${slug}">Just browse reels →</a>
+    <p class="center" style="margin-top:14px"><a href="https://www.instagram.com/originalvibehai/" target="_blank" rel="noopener" class="pill v">📸 Picked reels go up on @originalvibehai</a></p>
     <p class="mut sm center" style="margin-top:16px">No app download needed · Works in your browser</p>
   </div>${nav('')}`;
   const loadAnn = async () => { try { const l = await rpc('vh_announcements', { p_slug: slug }, false); const el = $('#anns'); if (el) el.innerHTML = l.length ? `<div class="card"><b>📢 Live updates</b>${annHtml(l.slice(0, 5))}</div>` : ''; } catch (e) {} };
@@ -816,6 +817,7 @@ async function screen(slug) {
     <div class="qr" style="margin-top:18px;width:min(86vw,420px)"><div id="q"></div></div>
     <div id="sstat" class="sm" style="margin-top:12px;font-family:'Space Mono';color:var(--g)"></div>
     <div id="sann" style="max-width:420px;margin:10px auto 0;text-align:left"></div>
+    <p style="margin-top:12px;font-size:20px;font-weight:700">📸 Follow @originalvibehai</p>
     <a class="btn" id="dl" style="max-width:260px;margin:16px auto 0">⬇ Download QR to print</a>
     <p class="mut sm" style="margin-top:12px">One QR for the whole event. Print it or show it on screen. Only fans at the venue during the event can post.</p>
     <a class="btn ghost" href="${m.is_admin ? '#/admin/events' : '#/org'}" style="max-width:260px;margin:20px auto 0">← Back</a></div>`;
