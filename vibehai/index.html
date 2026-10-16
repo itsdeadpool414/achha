@@ -176,7 +176,7 @@ async function home() {
     <div style="flex:none">${new Date(e.ends_at) > now ? (new Date(e.starts_at) <= now ? '<span class="pill r">● LIVE</span>' : '<span class="pill">SOON</span>') : '<span class="pill">ENDED</span>'}</div></div>
     <div><a class="btn sm ghost" href="#/feed?e=${e.slug}">▶ ${e.reel_count} reels</a>${new Date(e.ends_at) <= now ? `<a class="btn sm line" href="#/movie/${e.slug}">🎬 Aftermovie</a>` : ''}</div></div>`;
   app.innerHTML = `<div class="wrap">
-    <div class="top"><span class="logo">⚡ VIBEHAI</span><a href="#/me" class="pill gold">⏱ ${m.minutes} MIN</a></div>
+    <div class="top"><span class="logo">⚡ VIBEHAI</span><span><a href="#/org" class="pill v">🎪 ORGANISER</a> <a href="#/me" class="pill gold">⏱ ${m.minutes} MIN</a></span></div>
     <h1>Film the moment.<br>Get paid for it.</h1>
     <p class="mut" style="margin-top:10px">Scan the VibeHai QR at the venue, post your reel, and the best ones get reposted on our Instagram and paid. Watch reels to earn Vibe Minutes.</p>
     <div class="card glow"><div class="row center">
@@ -375,7 +375,7 @@ async function wallet() {
   const pay = r => r.payout_inr ? `<div class="sm" style="margin-top:6px;color:var(--g)">₹${r.payout_inr} · ${r.payout_status === 'paid' ? 'paid to UPI' : 'payout due'}</div>` : '';
   app.innerHTML = `<div class="wrap"><div class="top"><a href="#/" class="logo">⚡ VIBEHAI</a>${m.is_admin ? '<a class="pill v" href="#/admin">ADMIN</a>' : ''}</div>
     <h1>Your wallet</h1>
-    <a class="btn sm ghost" id="myp" href="#/me">👤 My public profile</a>
+    <a class="btn sm ghost" id="myp" href="#/me">👤 My public profile</a><a class="btn sm ghost" href="#/org">🎪 Organiser login</a>
     <div class="row" style="margin-top:14px">
       <div class="stat"><b style="color:var(--g)">₹${m.earned_inr}</b><span>Earned</span></div>
       <div class="stat"><b>₹${m.paid_inr}</b><span>Paid out</span></div>
