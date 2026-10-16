@@ -183,7 +183,7 @@ async function eventEntry(slug, code) {
     <div id="vbox">${already ? `<div class="card"><div class="step ok">✅ You're verified at this event</div></div><a class="btn" href="#/post/${slug}">🎬 Post your reel →</a>` : `
       <div class="card">
         <b>Prove you're here</b>
-        <p class="mut sm" style="margin-top:4px">We check your location against the venue and the live code in this QR. Your location is used only for this check.</p>
+        <p class="mut sm" style="margin-top:4px">We check that you're at the venue during the event. Your location is used only for this check.</p>
         <div id="steps"></div>
         <label class="check"><input type="checkbox" id="agree"> <span>I'm 18+ (or have a parent's OK), and I agree VibeHai may show my reels in the app, repost them on its Instagram with credit to me, and use them in the event aftermovie.</span></label>
       </div>
@@ -195,15 +195,14 @@ async function eventEntry(slug, code) {
   const go = $('#go'); if (!go) return;
   go.onclick = async () => {
     if (!$('#agree').checked) return toast('Tick the box to continue');
-    if (!code) return toast('Scan the QR on the venue screen to get the live code');
     const st = $('#steps'); go.disabled = true;
     st.innerHTML = `<div class="step">⏳ Getting your location…</div>`;
     try {
       const c = await getPos();
-      st.innerHTML = `<div class="step ok">✅ Location found (±${Math.round(c.accuracy)} m)</div><div class="step">⏳ Checking venue + live code…</div>`;
+      st.innerHTML = `<div class="step ok">✅ Location found (±${Math.round(c.accuracy)} m)</div><div class="step">⏳ Checking you're at the venue…</div>`;
       const r = await rpc('vh_checkin', { p_slug: slug, p_lat: c.latitude, p_lng: c.longitude, p_accuracy: c.accuracy, p_code: code });
       if (r.ok) {
-        st.innerHTML = `<div class="step ok">✅ Location found (±${Math.round(c.accuracy)} m)</div><div class="step ok">✅ At the venue · live code valid</div>`;
+        st.innerHTML = `<div class="step ok">✅ Location found (±${Math.round(c.accuracy)} m)</div><div class="step ok">✅ At the venue · verified</div>`;
         go.outerHTML = `<a class="btn g" href="#/post/${slug}">🎬 You're in. Post your reel →</a>`;
       } else { st.innerHTML += `<div class="step bad">❌ ${esc(r.reason)}</div>`; go.disabled = false; go.textContent = 'Try again'; }
     } catch (e) { st.innerHTML = `<div class="step bad">❌ ${esc(e.message)}</div>`; go.disabled = false; go.textContent = 'Try again'; }
@@ -431,29 +430,22 @@ async function admin(tab) {
   });
 }
 
-// ---------- venue screen: rotating QR ----------
+// ---------- venue screen: static QR ----------
 async function screen(slug) {
   const m = await me(); if (!m.is_admin) { location.hash = '#/admin'; return; }
   const ev = await rpc('vh_event', { p_slug: slug }, false);
   app.innerHTML = `<div class="wrap center" style="padding-top:30px"><div class="logo" style="font-size:34px">⚡ VIBEHAI</div><h1 style="margin-top:8px">${esc(ev.name)}</h1>
     <p class="mut">Scan to post your reel. The best get paid 💸</p>
     <div class="qr" style="margin-top:18px;width:min(86vw,420px)"><div id="q"></div></div>
-    <p class="pill" style="margin-top:14px">CODE <b id="cd" style="color:#fff">·····</b> · REFRESHES IN <span id="sl">–</span>s</p>
-    <p class="mut sm" style="margin-top:16px">Keep this screen open at the venue. The code changes every 2 minutes, so a photo of the QR stops working.</p>
+    <a class="btn" id="dl" style="max-width:260px;margin:16px auto 0">⬇ Download QR to print</a>
+    <p class="mut sm" style="margin-top:12px">One QR for the whole event. Print it or show it on screen. Only fans at the venue during the event can post.</p>
     <a class="btn ghost" href="#/admin/events" style="max-width:260px;margin:20px auto 0">← Back</a></div>`;
-  let left = 0, timer;
-  const draw = async () => {
-    try {
-      const r = await rpc('vh_admin_code', { p_slug: slug });
-      const url = `${BASE}#/e/${slug}?c=${r.code}`;
-      const qr = qrcode(0, 'M'); qr.addData(url); qr.make();
-      $('#q').innerHTML = qr.createImgTag(10, 0); $('#cd').textContent = r.code; left = r.seconds_left;
-    } catch (e) { toast(e.message); }
-  };
-  await draw();
-  timer = setInterval(() => { left--; const el = $('#sl'); if (el) el.textContent = Math.max(left, 0); if (left <= 0) draw(); }, 1000);
+  const url = `${BASE}#/e/${slug}`;
+  const qr = qrcode(0, 'M'); qr.addData(url); qr.make();
+  $('#q').innerHTML = qr.createImgTag(10, 0);
+  $('#dl').href = qr.createDataURL(16, 4); $('#dl').download = `vibehai-${slug}-qr.gif`;
   let wl = null; try { wl = await navigator.wakeLock?.request('screen'); } catch (e) {}
-  onLeave(() => { clearInterval(timer); wl?.release?.(); });
+  onLeave(() => { wl?.release?.(); });
 }
 
 render();
