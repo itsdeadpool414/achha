@@ -251,7 +251,14 @@ async function post(slug) {
   $('#up').onchange = e => pick(e.target.files[0], 'uploaded');
   async function submit() {
     if (!$('#real').checked) return toast('Confirm the footage is real to submit');
-    const b = $('#send'); b.disabled = true; b.textContent = 'Uploading…';
+    const b = $('#send'); b.disabled = true; b.textContent = 'Checking you’re still at the venue…';
+    let c;
+    try {
+      c = await getPos();
+      const chk = await rpc('vh_checkin', { p_slug: slug, p_lat: c.latitude, p_lng: c.longitude, p_accuracy: c.accuracy, p_code: '' });
+      if (!chk.ok) throw new Error(chk.reason);
+    } catch (e) { toast(e.message); b.disabled = false; b.textContent = 'Submit for review →'; return; }
+    b.textContent = 'Uploading…';
     $('#pg').innerHTML = '<div class="prog"><i style="width:30%"></i></div>';
     try {
       const ext = (file.name.split('.').pop() || 'mp4').toLowerCase().replace(/[^a-z0-9]/g, '') || 'mp4';
@@ -259,7 +266,7 @@ async function post(slug) {
       const { error } = await sb.storage.from(BUCKET).upload(path, file, { contentType: file.type || 'video/mp4', upsert: false });
       if (error) throw error;
       $('#pg').innerHTML = '<div class="prog"><i style="width:85%"></i></div>';
-      await rpc('vh_submit_reel', { p_slug: slug, p_path: path, p_caption: $('#cap').value, p_source: source, p_real: true });
+      await rpc('vh_submit_reel', { p_slug: slug, p_path: path, p_caption: $('#cap').value, p_source: source, p_real: true, p_lat: c.latitude, p_lng: c.longitude, p_accuracy: c.accuracy });
       app.querySelector('.wrap').innerHTML = `<div class="top"><a href="#/" class="logo">⚡ VIBEHAI</a></div>
         <div class="card glow center" style="padding:30px 16px"><div class="big">⏳</div><h2 style="margin-top:6px">Under review</h2>
         <div class="step ok" style="justify-content:center">✅ Location verified at the venue</div>
