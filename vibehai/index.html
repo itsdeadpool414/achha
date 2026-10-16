@@ -21,6 +21,7 @@ a{color:inherit;text-decoration:none}
 .pill.v{border-color:var(--v);color:#b38cff;background:rgba(123,47,255,.12)}
 .pill.g{border-color:var(--g);color:var(--g);background:rgba(0,255,135,.08)}
 .pill.gold{border-color:var(--gold);color:var(--gold);background:rgba(255,215,0,.08)}
+.pill.c{border-color:var(--c);color:var(--c)}
 .pill.r{border-color:#ff5a5a;color:#ff7a7a}
 h1{font-family:'Bebas Neue';font-size:44px;letter-spacing:2px;line-height:1}
 h2{font-family:'Bebas Neue';font-size:28px;letter-spacing:2px;margin:24px 0 10px}
@@ -150,6 +151,7 @@ async function render() {
       case 'screen': return await screen(parts[1]);
       case 'gate': return await gate(parts[1], q.get('t'));
       case 'host': return await host();
+      case 'org': return await orgPortal(parts[1], q);
       case 'score': return await scorePage();
       case 'u': return await profile(parts[1]);
       case 'o': return await orgPage(decodeURIComponent(parts[1] || ''));
@@ -185,7 +187,7 @@ async function home() {
     <div class="row" style="align-items:center"><h2>${here ? 'Events near you' : 'Events'}</h2>${here ? '' : '<button class="btn sm ghost" id="near" style="flex:none">📍 Near me</button>'}</div>
     ${live.map(card).join('') || '<p class="mut">No live events right now.</p>'}
     ${past.length ? '<h2>Past events</h2>' + past.map(card).join('') : ''}
-    <div class="card"><b>Running a fest or event?</b><p class="mut sm" style="margin-top:4px">Get your event on VibeHai. We verify organisers before the QR goes live.</p><a class="btn sm line" href="#/host">🎪 Host your event</a><a class="btn sm ghost" href="#/score">How picks work</a></div>
+    <div class="card"><b>Running a fest or event?</b><p class="mut sm" style="margin-top:4px">Get your event on VibeHai. We verify organisers before the QR goes live.</p><a class="btn sm line" href="#/org?s=1">🎪 Organiser sign-up</a><a class="btn sm ghost" href="#/org">Organiser login</a><a class="btn sm ghost" href="#/score">How picks work</a></div>
     <p class="mut sm center" style="margin-top:30px">100% fan-filmed · location-verified · Yaar, Vibe Hai ⚡</p>
   </div>${nav('home')}`;
   const nb = $('#near'); if (nb) nb.onclick = async () => { nb.disabled = true; try { await getPos(); home(); } catch (e) { toast(e.message); nb.disabled = false; } };
@@ -451,10 +453,21 @@ async function admin(tab) {
   tab = tab || 'review';
   const t = (k, l) => `<a class="btn sm ${tab === k ? '' : 'ghost'}" href="#/admin/${k}">${l}</a>`;
   app.innerHTML = `<div class="wrap"><div class="top"><a href="#/" class="logo">⚡ VIBEHAI</a><span><span class="pill v">ADMIN</span> <a href="#" id="lo" class="mut sm" style="margin-left:8px">Log out</a></span></div>
-    <div id="stats" class="row"></div><div style="margin-top:10px">${t('review', 'Review')}${t('picked', 'Picked & payouts')}${t('events', 'Events')}${t('hosts', 'Host requests')}</div><div id="body"><p class="mut" style="margin-top:14px">Loading…</p></div></div>${nav('')}`;
+    <div id="stats" class="row"></div><div style="margin-top:10px">${t('review', 'Review')}${t('picked', 'Picked & payouts')}${t('events', 'Events')}${t('hosts', 'Host requests')}${t('orgs', 'Organisers')}</div><div id="body"><p class="mut" style="margin-top:14px">Loading…</p></div></div>${nav('')}`;
   rpc('vh_admin_stats').then(s => { $('#stats').innerHTML = `<div class="stat"><b>${s.fans}</b><span>Fans</span></div><div class="stat"><b>${s.reels}</b><span>Reels</span></div><div class="stat"><b>${s.pending}</b><span>To review</span></div><div class="stat"><b style="color:var(--g)">₹${s.payout_due}</b><span>Due</span></div>`; });
   $('#lo').onclick = async ev => { ev.preventDefault(); await rpc('vh_admin_logout'); toast('Logged out'); admin(); };
   const body = $('#body');
+  if (tab === 'orgs') {
+    const os = await rpc('vh_admin_organisers');
+    body.innerHTML = `<h2>Organiser accounts</h2><p class="mut sm">Check the official email and proof link. Approved organisers create their own events and moderate their own reels. Payouts stay with you.</p>` + (os.map(o => `<div class="card" data-id="${o.id}">
+      <b>${esc(o.org_name)}</b> <span class="pill ${o.status === 'approved' ? 'g' : o.status === 'pending' ? 'gold' : 'r'}">${o.status.toUpperCase()}</span>
+      <div class="sm">${esc(o.contact_name || '')} · login: ${esc(o.login_id)} · ${o.events} events</div>
+      <div class="mut sm">✉️ ${esc(o.official_email)}${o.phone ? ' · 📞 ' + esc(o.phone) : ''} · ${fmtD(o.created_at)}</div>
+      ${o.proof_url ? `<div class="sm"><a href="${esc(/^https?:/i.test(o.proof_url) ? o.proof_url : 'https://' + o.proof_url)}" target="_blank" rel="noopener" style="color:#c9a8ff">📎 Proof link</a></div>` : ''}
+      <div>${o.status !== 'approved' ? '<button class="btn sm g act" data-a="approved">✅ Approve</button>' : '<button class="btn sm ghost act" data-a="suspended">⛔ Suspend</button>'}${o.status === 'pending' ? '<button class="btn sm ghost act" data-a="rejected">❌ Reject</button>' : ''}</div></div>`).join('') || '<p class="mut">No organiser accounts yet.</p>');
+    body.querySelectorAll('.act').forEach(b => b.onclick = async () => { const c = b.closest('.card'); if (b.dataset.a !== 'approved' && !confirm('Are you sure?')) return; try { await rpc('vh_admin_decide_org', { p_id: c.dataset.id, p_status: b.dataset.a }); toast('Done ✅'); admin('orgs'); } catch (e) { toast(e.message); } });
+    return;
+  }
   if (tab === 'hosts') {
     const reqs = await rpc('vh_admin_host_requests');
     body.innerHTML = `<h2>Organiser requests</h2><p class="mut sm">Check the official email domain and the proof before approving. Approving creates a verified event.</p>` + (reqs.map(h => `<div class="card" data-id="${h.id}">
@@ -572,6 +585,131 @@ async function orgPage(name) {
   $('#fl').onclick = async () => { try { const r = await rpc('vh_follow', { p_kind: 'org', p_target: name }); $('#fl').className = 'btn' + (r.following ? ' ghost' : ''); $('#fl').textContent = r.following ? 'Following ✓' : '+ Follow'; $('#of').textContent = r.followers; } catch (e) { toast(e.message); } };
 }
 
+// ---------- organiser portal ----------
+const locDT = d => new Date(d.getTime() - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 16);
+async function orgPortal(tab, q) {
+  await ready;
+  const h = await rpc('vh_org_home');
+  const top = extra => `<div class="top"><a href="#/" class="logo">⚡ VIBEHAI</a>${extra || '<span class="pill v">ORGANISER</span>'}</div>`;
+  if (!h.logged_in) {
+    const signup = q.get('s') === '1';
+    app.innerHTML = `<div class="wrap">${top()}<h1>Organiser portal</h1><p class="mut">Create events, get your venue QR, and approve the reels fans post.</p>
+      <div style="margin-top:12px"><a class="btn sm ${signup ? 'ghost' : ''}" href="#/org">Log in</a><a class="btn sm ${signup ? '' : 'ghost'}" href="#/org?s=1">Create account</a></div>
+      ${signup ? `<div class="card"><b>Register your organisation</b><p class="mut sm">VibeHai checks every organiser before events go public, usually within 24 hours.</p>
+        <label>Organisation / club / college</label><input id="o1" placeholder="SVN College Cultural Committee">
+        <label>Your name</label><input id="o2" placeholder="Event head or coordinator">
+        <label>Official email</label><input id="o3" type="email" inputmode="email" placeholder="culture@college.ac.in">
+        <label>Phone</label><input id="o4" type="tel" inputmode="tel" placeholder="98xxxxxxxx">
+        <label>Proof link</label><input id="o5" placeholder="Instagram page, website or permission letter link">
+        <label>Login ID</label><input id="o6" autocapitalize="none" autocomplete="username" placeholder="svn_culture">
+        <label>Password (8+ characters)</label><input id="o7" type="password" autocomplete="new-password">
+        <button class="btn" id="go">Create organiser account</button></div>`
+      : `<div class="card"><b>Log in</b>
+        <input id="l1" placeholder="Login ID" autocapitalize="none" autocomplete="username" style="margin-top:10px">
+        <input id="l2" type="password" placeholder="Password" autocomplete="current-password" style="margin-top:8px">
+        <button class="btn" id="go">Log in</button></div>`}</div>${nav('')}`;
+    $('#go').onclick = async () => {
+      const b = $('#go'); b.disabled = true;
+      try {
+        if (signup) {
+          await rpc('vh_org_signup', { p_org: $('#o1').value, p_contact: $('#o2').value, p_email: $('#o3').value, p_phone: $('#o4').value, p_proof: $('#o5').value, p_login: $('#o6').value, p_pass: $('#o7').value });
+          toast('Account created ✅'); location.hash = '#/org';
+        } else {
+          const r = await rpc('vh_org_login', { p_login: $('#l1').value, p_pass: $('#l2').value });
+          if (!r.ok) { toast(r.reason); b.disabled = false; return; }
+          toast('Logged in ✅'); orgPortal(tab, q);
+        }
+      } catch (e) { toast(e.message); b.disabled = false; }
+    };
+    return;
+  }
+  const lo = `<span><span class="pill ${h.status === 'approved' ? 'g' : 'gold'}">${h.status === 'approved' ? '✅ VERIFIED' : '⏳ ' + h.status.toUpperCase()}</span> <a href="#" id="lo" class="mut sm" style="margin-left:8px">Log out</a></span>`;
+  const bindLo = () => $('#lo').onclick = async ev => { ev.preventDefault(); await rpc('vh_org_logout'); toast('Logged out'); location.hash = '#/org'; orgPortal(); };
+  if (h.status !== 'approved') {
+    app.innerHTML = `<div class="wrap">${top(lo)}<h1>${esc(h.org_name)}</h1><div class="card center"><div class="big">⏳</div>
+      <p>${h.status === 'pending' ? 'VibeHai is checking your proof link. Once you are verified you can create events and moderate reels here.' : 'This account is ' + esc(h.status) + '. Write to VibeHai if you think this is a mistake.'}</p></div></div>${nav('')}`;
+    bindLo(); return;
+  }
+  tab = tab || 'events';
+  const t = (k, l) => `<a class="btn sm ${tab === k ? '' : 'ghost'}" href="#/org/${k}">${l}</a>`;
+  app.innerHTML = `<div class="wrap">${top(lo)}<h1>${esc(h.org_name)}</h1>
+    <div class="row" style="margin-top:10px"><div class="stat"><b>${h.events.length}</b><span>Events</span></div><div class="stat"><b style="color:var(--gold)">${h.pending}</b><span>To review</span></div><div class="stat"><b>${h.followers}</b><span>Followers</span></div></div>
+    <div style="margin-top:10px">${t('events', 'Events')}${t('new', '+ New event')}${t('reels', `Moderate reels${h.pending ? ' (' + h.pending + ')' : ''}`)}</div><div id="body"></div></div>${nav('')}`;
+  bindLo();
+  const body = $('#body');
+
+  if (tab === 'new') {
+    const d0 = new Date(); d0.setDate(d0.getDate() + 1); d0.setHours(18, 0, 0, 0);
+    body.innerHTML = `<h2>Create an event</h2><div class="card">
+      <label>Event name</label><input id="en" placeholder="Harda Garba Night 2026">
+      <label>Venue</label><input id="ev" placeholder="Nehru Stadium, Harda">
+      <div class="row"><div><label>Starts</label><input id="es" type="datetime-local" value="${locDT(d0)}"></div><div><label>Ends</label><input id="ee" type="datetime-local" value="${locDT(new Date(d0.getTime() + 5 * 36e5))}"></div></div>
+      <label>Venue location</label><p class="mut sm">Stand at the venue and tap the button, or paste the coordinates from Google Maps.</p>
+      <button class="btn sm ghost" id="here">📍 Use my current location</button>
+      <div class="row"><div><label>Latitude</label><input id="la" inputmode="decimal"></div><div><label>Longitude</label><input id="lg" inputmode="decimal"></div></div>
+      <div id="map" class="sm"></div>
+      <label>Check-in radius (metres)</label><input id="ra" inputmode="numeric" value="500"><p class="mut sm">Fans must be inside this circle to scan in and post. 300–800 m suits most grounds.</p>
+      <button class="btn" id="mk">Create event &amp; get QR</button></div>`;
+    const showMap = () => { const la = parseFloat($('#la').value), lg = parseFloat($('#lg').value); $('#map').innerHTML = isNaN(la) || isNaN(lg) ? '' : `<a style="color:#c9a8ff" target="_blank" href="https://www.google.com/maps/search/?api=1&query=${la},${lg}">🗺 Check this spot on Google Maps</a>`; };
+    $('#la').oninput = $('#lg').oninput = showMap;
+    $('#here').onclick = async () => { try { const c = await getPos(); $('#la').value = c.latitude.toFixed(6); $('#lg').value = c.longitude.toFixed(6); showMap(); toast(`Got it (±${Math.round(c.accuracy)} m)`); } catch (e) { toast(e.message); } };
+    $('#mk').onclick = async () => {
+      const b = $('#mk'); b.disabled = true;
+      try {
+        const r = await rpc('vh_org_create_event', { p_name: $('#en').value, p_venue: $('#ev').value, p_lat: parseFloat($('#la').value), p_lng: parseFloat($('#lg').value),
+          p_radius: parseInt($('#ra').value) || 500, p_starts: new Date($('#es').value).toISOString(), p_ends: new Date($('#ee').value).toISOString() });
+        toast('Event created ✅'); location.hash = `#/screen/${r.slug}`;
+      } catch (e) { toast(e.message); b.disabled = false; }
+    };
+    return;
+  }
+
+  if (tab === 'reels') {
+    const st = q.get('st') || 'pending', ev = q.get('e') || '';
+    const list = await rpc('vh_org_reels', { p_status: st, p_slug: ev || null });
+    const chip = (k, l) => `<a class="btn sm ${st === k ? '' : 'ghost'}" href="#/org/reels?st=${k}${ev ? '&e=' + ev : ''}">${l}</a>`;
+    body.innerHTML = `<div style="margin-top:12px">${chip('pending', '⏳ Pending')}${chip('approved', '✅ Live')}${chip('featured', '⭐ Picked')}${chip('rejected', '❌ Rejected')}</div>
+      <select id="evf" style="margin-top:8px"><option value="">All events</option>${h.events.map(e => `<option value="${e.slug}" ${e.slug === ev ? 'selected' : ''}>${esc(e.name)}</option>`).join('')}</select>
+      <details class="card sm"><summary><b>Moderation rules</b></summary><p class="mut" style="margin-top:6px">Approve only if the reel was filmed at this event, shows no nudity, violence, hate or drugs, doesn't mock or harass anyone, and isn't a repost of someone else's video. Pick ⭐ the best few for the official page and the aftermovie. Rejected reels never show to fans.</p></details>
+      ${list.map(r => `<div class="card" data-id="${r.id}">
+        <video src="${pub(r.video_path)}" controls playsinline preload="metadata" style="width:100%;max-height:60vh;border-radius:12px;background:#000"></video>
+        <div style="margin-top:8px"><b>${esc(r.event)}</b> · <span class="pill v">⚡ ${r.score}</span> ${r.source === 'uploaded' ? '<span class="pill r">FROM GALLERY</span>' : '<span class="pill g">RECORDED LIVE</span>'} <span class="pill">${r.distance_m ?? '?'} m from venue</span></div>
+        <div class="sm" style="margin-top:6px"><a href="#/u/${r.pid}">@${esc(r.creator)}</a> · ${esc(r.caption || '')}</div>
+        <div class="mut sm">👁 ${r.views} · ❤️ ${r.likes} · 📤 ${r.shares} · 💬 ${r.comments} · ${ago(r.created_at)}</div>
+        ${r.reject_reason ? `<div class="sm" style="color:#ff7a7a">Rejected: ${esc(r.reject_reason)}</div>` : ''}
+        <div style="margin-top:8px">${st !== 'approved' ? '<button class="btn sm act" data-a="approved">✅ Approve</button>' : ''}${st !== 'featured' ? '<button class="btn sm g act" data-a="featured">⭐ Pick</button>' : ''}${st !== 'rejected' ? `<select class="rs" style="margin-top:6px"><option value="">Reject reason…</option><option>Not filmed at this event</option><option>Inappropriate content</option><option>Harassment or mocking someone</option><option>Repost / not their video</option><option>Low quality</option><option>Duplicate</option></select><button class="btn sm ghost act" data-a="rejected">${st === 'pending' ? '❌ Reject' : '🗑 Remove'}</button>` : ''}</div></div>`).join('') || `<p class="mut" style="margin-top:14px">${st === 'pending' ? 'All caught up. No reels waiting.' : 'Nothing here.'}</p>`}`;
+    $('#evf').onchange = e => location.hash = `#/org/reels?st=${st}${e.target.value ? '&e=' + e.target.value : ''}`;
+    body.querySelectorAll('.act').forEach(b => b.onclick = async () => {
+      const c = b.closest('.card'), a = b.dataset.a, reason = c.querySelector('.rs')?.value || null;
+      if (a === 'rejected' && !reason) return toast('Choose a reason first');
+      try { await rpc('vh_org_set_reel', { p_reel: c.dataset.id, p_status: a, p_reason: reason }); c.remove(); toast(a === 'rejected' ? 'Removed' : a === 'featured' ? 'Picked ⭐' : 'Approved ✅'); } catch (e) { toast(e.message); }
+    });
+    return;
+  }
+
+  const now = Date.now();
+  body.innerHTML = `<h2>Your events</h2>` + (h.events.map(e => {
+    const live = new Date(e.starts_at) <= now && new Date(e.ends_at) > now, over = new Date(e.ends_at) <= now;
+    return `<div class="card" data-slug="${e.slug}"><b>${esc(e.name)}</b> ${live ? '<span class="pill g">LIVE</span>' : over ? '<span class="pill">ENDED</span>' : '<span class="pill c">UPCOMING</span>'}
+      <div class="mut sm">${esc(e.venue || '')} · ${fmtD(e.starts_at)} → ${fmtD(e.ends_at)} · ${e.radius_m} m</div>
+      <div class="mut sm">✅ ${e.checked_in} checked in · 🎬 ${e.reels} reels${e.pending ? ` · <b style="color:var(--gold)">${e.pending} to review</b>` : ''}</div>
+      <a class="btn sm" href="#/screen/${e.slug}">📺 QR / venue screen</a>${e.pending ? `<a class="btn sm g" href="#/org/reels?st=pending&e=${e.slug}">Review ${e.pending}</a>` : ''}
+      <a class="btn sm ghost" href="#/e/${e.slug}">Fan page</a>${over ? `<a class="btn sm ghost" href="#/movie/${e.slug}">🎬 Aftermovie</a>` : ''}
+      <button class="btn sm line dash">📊 Dashboard</button><button class="btn sm ghost ed">✏️ Edit</button><div class="dbox"></div></div>`;
+  }).join('') || '<div class="card center"><p class="mut">No events yet.</p><a class="btn" href="#/org/new">+ Create your first event</a></div>');
+  body.querySelectorAll('.card[data-slug]').forEach(c => {
+    const slug = c.dataset.slug, e = h.events.find(x => x.slug === slug), box = c.querySelector('.dbox');
+    c.querySelector('.dash').onclick = () => { if (box.dataset.m === 'd') { box.innerHTML = ''; box.dataset.m = ''; return; } box.dataset.m = 'd'; eventDash(slug, box); };
+    c.querySelector('.ed').onclick = () => {
+      if (box.dataset.m === 'e') { box.innerHTML = ''; box.dataset.m = ''; return; } box.dataset.m = 'e';
+      box.innerHTML = `<div style="margin-top:10px"><label>Event name</label><input class="xn" value="${esc(e.name)}"><label>Venue</label><input class="xv" value="${esc(e.venue || '')}">
+        <div class="row"><div><label>Starts</label><input class="xs" type="datetime-local" value="${locDT(new Date(e.starts_at))}"></div><div><label>Ends</label><input class="xe" type="datetime-local" value="${locDT(new Date(e.ends_at))}"></div></div>
+        <label>Radius (m)</label><input class="xr" inputmode="numeric" value="${e.radius_m}"><button class="btn sm sv">Save changes</button></div>`;
+      box.querySelector('.sv').onclick = async () => { try { await rpc('vh_org_update_event', { p_slug: slug, p_name: box.querySelector('.xn').value, p_venue: box.querySelector('.xv').value, p_radius: parseInt(box.querySelector('.xr').value), p_starts: new Date(box.querySelector('.xs').value).toISOString(), p_ends: new Date(box.querySelector('.xe').value).toISOString() }); toast('Saved ✅'); orgPortal('events', q); } catch (er) { toast(er.message); } };
+    };
+  });
+}
+
 // ---------- organiser dashboard (per event) ----------
 async function eventDash(slug, box) {
   box.innerHTML = '<p class="mut sm" style="margin-top:8px">Loading…</p>';
@@ -669,7 +807,8 @@ async function scorePage() {
 
 // ---------- venue screen: static QR ----------
 async function screen(slug) {
-  const m = await me(); if (!m.is_admin) { location.hash = '#/admin'; return; }
+  const m = await me();
+  try { await rpc('vh_admin_event_stats', { p_slug: slug }); } catch (e) { location.hash = m.is_admin ? '#/admin' : '#/org'; return; }
   const ev = await rpc('vh_event', { p_slug: slug }, false);
   app.innerHTML = `<div class="wrap center" style="padding-top:30px"><div class="logo" style="font-size:34px">⚡ VIBEHAI</div><h1 style="margin-top:8px">${esc(ev.name)}</h1>
     <p class="mut">Scan to post your reel. The best get paid 💸</p>
@@ -678,7 +817,7 @@ async function screen(slug) {
     <div id="sann" style="max-width:420px;margin:10px auto 0;text-align:left"></div>
     <a class="btn" id="dl" style="max-width:260px;margin:16px auto 0">⬇ Download QR to print</a>
     <p class="mut sm" style="margin-top:12px">One QR for the whole event. Print it or show it on screen. Only fans at the venue during the event can post.</p>
-    <a class="btn ghost" href="#/admin/events" style="max-width:260px;margin:20px auto 0">← Back</a></div>`;
+    <a class="btn ghost" href="${m.is_admin ? '#/admin/events' : '#/org'}" style="max-width:260px;margin:20px auto 0">← Back</a></div>`;
   const url = `${BASE}#/e/${slug}`;
   const qr = qrcode(0, 'M'); qr.addData(url); qr.make();
   $('#q').innerHTML = qr.createImgTag(10, 0);
