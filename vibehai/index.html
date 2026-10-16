@@ -70,6 +70,14 @@ label{display:block;margin-top:12px;font-size:13px;color:var(--t2)}
 .side button i{font-style:normal;font-size:24px;line-height:1.1}
 .ann{border-left:3px solid var(--p);padding:8px 12px;background:var(--el);border-radius:0 10px 10px 0;margin-top:8px}
 .ann .mut{font-size:11px}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-height:75vh;background:var(--card);border-top:1px solid var(--bd);border-radius:20px 20px 0 0;z-index:40;display:flex;flex-direction:column;padding:14px 14px calc(14px + env(safe-area-inset-bottom))}
+.sheet .cl{overflow-y:auto;flex:1;margin:8px 0}
+.sheet .cm{padding:8px 0;border-bottom:1px solid var(--bd);font-size:14px}
+.shade{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:39}
+.fbtn{background:transparent;border:1px solid #fff;color:#fff;border-radius:8px;padding:2px 10px;font:700 12px 'DM Sans';margin-left:8px;cursor:pointer}
+.fbtn.on{border-color:var(--bd);color:var(--t2)}
+.tabs{display:flex;gap:6px}.tabs a{font-family:'Space Mono';font-size:11px;letter-spacing:1px;padding:5px 10px;border-radius:16px;background:rgba(0,0,0,.5);color:var(--t2)}.tabs a.on{color:#fff;border:1px solid #fff}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:12px}.grid a{position:relative;aspect-ratio:9/16;background:#000;border-radius:8px;overflow:hidden}.grid video{width:100%;height:100%;object-fit:cover}.grid span{position:absolute;left:4px;bottom:4px;font-size:11px;text-shadow:0 1px 3px #000}
 .title{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:#000;padding:24px}
 </style>
 </head>
@@ -90,6 +98,8 @@ const SCORE_TXT = 'Score = Views × 1 + Likes × 2 + Shares × 5 + 50 bonus if p
 const ago = d => { const m = Math.round((Date.now() - new Date(d)) / 6e4); return m < 1 ? 'just now' : m < 60 ? m + ' min ago' : Math.round(m / 60) + ' h ago'; };
 const annHtml = list => list.map(a => `<div class="ann"><div>${esc(a.body)}</div><div class="mut">${a.by === 'gate' ? 'Gate team' : 'Organiser'} · ${ago(a.at)}</div></div>`).join('');
 const orgBadge = e => e.org_name ? `<span class="pill g">✅ ${esc(e.org_name)}</span>` : '<span class="pill g">✅ VERIFIED EVENT</span>';
+const distKm = (a, b, c, d) => { const R = 6371, x = (c - a) * Math.PI / 180, y = (d - b) * Math.PI / 180, h = Math.sin(x / 2) ** 2 + Math.cos(a * Math.PI / 180) * Math.cos(c * Math.PI / 180) * Math.sin(y / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(h)); };
+const orgLink = n => `#/o/${encodeURIComponent(n)}`;
 const fmtD = d => new Date(d).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
 function toast(m, ms = 2600) { const t = document.createElement('div'); t.className = 'toast'; t.textContent = m; document.body.appendChild(t); setTimeout(() => t.remove(), ms); }
 
@@ -132,7 +142,7 @@ async function render() {
     if (!parts.length) return await home();
     switch (parts[0]) {
       case 'e': return await eventEntry(parts[1], q.get('c'));
-      case 'feed': return await feed(q.get('e'));
+      case 'feed': return await feed(q.get('e'), q.get('f') === '1');
       case 'post': return await post(parts[1]);
       case 'me': return await wallet();
       case 'movie': return await movie(parts[1]);
@@ -141,6 +151,8 @@ async function render() {
       case 'gate': return await gate(parts[1], q.get('t'));
       case 'host': return await host();
       case 'score': return await scorePage();
+      case 'u': return await profile(parts[1]);
+      case 'o': return await orgPage(decodeURIComponent(parts[1] || ''));
       default: return await home();
     }
   } catch (e) { app.innerHTML = `<div class="wrap"><div class="top"><a href="#/" class="logo">⚡ VIBEHAI</a></div><div class="card">Something went wrong: ${esc(e.message)}</div><button class="btn" onclick="location.reload()">Reload</button></div>`; }
@@ -152,9 +164,13 @@ async function home() {
   await ready;
   const [events, m] = await Promise.all([rpc('vh_events_list', {}, false), me()]);
   const now = Date.now();
+  let here = null;
+  try { const perm = await navigator.permissions?.query({ name: 'geolocation' }); if (perm?.state === 'granted') here = await getPos(); } catch (e) {}
+  if (here) { events.forEach(e => e.km = distKm(here.latitude, here.longitude, e.lat, e.lng)); }
   const live = events.filter(e => new Date(e.ends_at) > now);
+  if (here) live.sort((a, b) => a.km - b.km);
   const past = events.filter(e => new Date(e.ends_at) <= now);
-  const card = e => `<div class="card"><div class="row" style="align-items:center"><div><b>${esc(e.name)}</b><div class="mut sm">${esc(e.venue || '')} · ${fmtD(e.starts_at)}</div>${e.org_name ? `<div class="sm" style="color:var(--g)">✅ by ${esc(e.org_name)}</div>` : ''}</div>
+  const card = e => `<div class="card"><div class="row" style="align-items:center"><div><b>${esc(e.name)}</b><div class="mut sm">${esc(e.venue || '')} · ${fmtD(e.starts_at)}</div>${e.org_name ? `<a class="sm" style="color:var(--g)" href="${orgLink(e.org_name)}">✅ by ${esc(e.org_name)}</a>` : ''}${e.km != null ? `<div class="sm" style="color:var(--c)">📍 ${e.km < 1 ? Math.round(e.km * 1000) + ' m' : e.km.toFixed(1) + ' km'} away</div>` : ''}</div>
     <div style="flex:none">${new Date(e.ends_at) > now ? (new Date(e.starts_at) <= now ? '<span class="pill r">● LIVE</span>' : '<span class="pill">SOON</span>') : '<span class="pill">ENDED</span>'}</div></div>
     <div><a class="btn sm ghost" href="#/feed?e=${e.slug}">▶ ${e.reel_count} reels</a>${new Date(e.ends_at) <= now ? `<a class="btn sm line" href="#/movie/${e.slug}">🎬 Aftermovie</a>` : ''}</div></div>`;
   app.innerHTML = `<div class="wrap">
@@ -166,12 +182,13 @@ async function home() {
       <div><div class="big">🎬</div><div class="sm mut">Post your reel</div></div>
       <div><div class="big">💸</div><div class="sm mut">Get picked, get paid</div></div></div></div>
     ${m.checkins.filter(c => new Date(c.ends_at).getTime() + 864e5 > now).map(c => `<a class="btn" href="#/post/${c.slug}">🎬 Post a reel from ${esc(c.name)}</a>`).join('')}
-    <h2>Events</h2>
+    <div class="row" style="align-items:center"><h2>${here ? 'Events near you' : 'Events'}</h2>${here ? '' : '<button class="btn sm ghost" id="near" style="flex:none">📍 Near me</button>'}</div>
     ${live.map(card).join('') || '<p class="mut">No live events right now.</p>'}
     ${past.length ? '<h2>Past events</h2>' + past.map(card).join('') : ''}
     <div class="card"><b>Running a fest or event?</b><p class="mut sm" style="margin-top:4px">Get your event on VibeHai. We verify organisers before the QR goes live.</p><a class="btn sm line" href="#/host">🎪 Host your event</a><a class="btn sm ghost" href="#/score">How picks work</a></div>
     <p class="mut sm center" style="margin-top:30px">100% fan-filmed · location-verified · Yaar, Vibe Hai ⚡</p>
   </div>${nav('home')}`;
+  const nb = $('#near'); if (nb) nb.onclick = async () => { nb.disabled = true; try { await getPos(); home(); } catch (e) { toast(e.message); nb.disabled = false; } };
 }
 
 // ---------- event entry + verification ----------
@@ -188,7 +205,7 @@ async function eventEntry(slug, code) {
   const m = await me();
   const already = m.checkins.some(c => c.slug === slug);
   app.innerHTML = `<div class="wrap">
-    <div class="top"><a href="#/" class="logo">⚡ VIBEHAI</a>${orgBadge(ev)}</div>
+    <div class="top"><a href="#/" class="logo">⚡ VIBEHAI</a>${ev.org_name ? `<a href="${orgLink(ev.org_name)}">${orgBadge(ev)}</a>` : orgBadge(ev)}</div>
     <div class="card glow center" style="padding:28px 16px">
       <h1>${esc(ev.name)}</h1>
       <p class="mut" style="margin-top:6px">${esc(ev.venue || '')} · ${fmtD(ev.starts_at)}</p>
@@ -294,22 +311,30 @@ async function post(slug) {
 }
 
 // ---------- feed + vibe minutes ----------
-async function feed(slug) {
+async function feed(slug, following) {
   await ready;
-  const [items, m] = await Promise.all([rpc('vh_feed_v2', { p_slug: slug || null }), me()]);
-  if (!items.length) { app.innerHTML = `<div class="wrap"><div class="top"><a href="#/" class="logo">⚡ VIBEHAI</a></div><div class="card center"><div class="big">🎬</div><p class="mut">No approved reels here yet. Check back after the event.</p></div></div>${nav('feed')}`; return; }
+  const [items, m] = await Promise.all([rpc('vh_feed_v3', { p_slug: slug || null, p_following: !!following }), me()]);
+  const tabsH = slug ? '' : `<div class="tabs"><a href="#/feed" class="${following ? '' : 'on'}">FOR YOU</a><a href="#/feed?f=1" class="${following ? 'on' : ''}">FOLLOWING</a></div>`;
+  if (!items.length) { app.innerHTML = `<div class="wrap"><div class="top"><a href="#/" class="logo">⚡ VIBEHAI</a>${tabsH}</div><div class="card center"><div class="big">🎬</div><p class="mut">${following ? 'Nothing from people you follow yet. Follow creators and organisers from the feed.' : 'No approved reels here yet. Check back after the event.'}</p></div></div>${nav('feed')}`; return; }
   let mins = m.minutes;
   app.innerHTML = `<div class="feed" id="fd">${items.map(r => `<div class="slide" data-id="${r.id}">
       <video src="${pub(r.video_path)}" playsinline loop muted preload="metadata"></video>
-      <div class="side"><button class="lk"><i>${r.liked ? '❤️' : '🤍'}</i><span>${r.likes}</span></button><button class="sh"><i>📤</i><span>${r.shares}</span></button><button class="sc" onclick="location.hash='#/score'"><i>⚡</i><span>${r.score}</span></button></div>
+      <div class="side"><button class="lk"><i>${r.liked ? '❤️' : '🤍'}</i><span>${r.likes}</span></button><button class="cmb"><i>💬</i><span>${r.comments}</span></button><button class="sh"><i>📤</i><span>${r.shares}</span></button><button class="sc" onclick="location.hash='#/score'"><i>⚡</i><span>${r.score}</span></button></div>
       <div class="ov">${r.featured ? '<span class="pill gold">⭐ FEATURED ON INSTAGRAM</span> ' : ''}<span class="pill g">✅ CROWD-VERIFIED</span>
-        <div style="margin-top:8px;font-weight:700">@${esc(r.creator)}</div>
+        <div style="margin-top:8px;font-weight:700"><a href="#/u/${r.pid}">@${esc(r.creator)}</a>${r.is_me ? '' : `<button class="fbtn ${r.follows ? 'on' : ''}" data-pid="${r.pid}">${r.follows ? 'Following' : '+ Follow'}</button>`}</div>
         <div class="sm">${esc(r.caption || '')}</div>
         <div class="mut sm">${esc(r.event)}${r.venue ? ' · ' + esc(r.venue) : ''} · ${r.views} views</div></div></div>`).join('')}</div>
-    <div class="hud"><a href="#/" class="logo" style="font-size:22px">⚡ VIBEHAI</a><span><button class="pill" id="snd" style="background:rgba(0,0,0,.5)">🔇 TAP FOR SOUND</button> <a href="#/me" class="pill gold" id="mn" style="background:rgba(0,0,0,.5)">⏱ ${mins} MIN</a></span></div>${nav('feed')}`;
+    <div class="hud"><a href="#/" class="logo" style="font-size:22px">⚡ VIBEHAI</a>${tabsH}<span><button class="pill" id="snd" style="background:rgba(0,0,0,.5)">🔇 TAP FOR SOUND</button> <a href="#/me" class="pill gold" id="mn" style="background:rgba(0,0,0,.5)">⏱ ${mins} MIN</a></span></div>${nav('feed')}`;
   document.querySelectorAll('.slide').forEach(sl => {
     const id = sl.dataset.id, it = items.find(x => x.id === id);
     sl.querySelector('.lk').onclick = async e => { const b = e.currentTarget; try { const r = await rpc('vh_like', { p_reel: id }); b.innerHTML = `<i>${r.liked ? '❤️' : '🤍'}</i><span>${r.likes}</span>`; } catch (er) { toast(er.message); } };
+    sl.querySelector('.cmb').onclick = e => openComments(id, e.currentTarget);
+    sl.querySelector('.fbtn')?.addEventListener('click', async e => {
+      const pid = e.currentTarget.dataset.pid;
+      try { const r = await rpc('vh_follow', { p_kind: 'creator', p_target: pid });
+        document.querySelectorAll(`.fbtn[data-pid="${pid}"]`).forEach(b => { b.className = 'fbtn' + (r.following ? ' on' : ''); b.textContent = r.following ? 'Following' : '+ Follow'; });
+        toast(r.following ? 'Following ✅' : 'Unfollowed', 1200); } catch (er) { toast(er.message); }
+    });
     sl.querySelector('.sh').onclick = async e => {
       const b = e.currentTarget, url = `${BASE}#/feed?e=${it.slug}`;
       const text = `🔥 @${it.creator} at ${it.event} on VibeHai`;
@@ -348,6 +373,7 @@ async function wallet() {
   const pay = r => r.payout_inr ? `<div class="sm" style="margin-top:6px;color:var(--g)">₹${r.payout_inr} · ${r.payout_status === 'paid' ? 'paid to UPI' : 'payout due'}</div>` : '';
   app.innerHTML = `<div class="wrap"><div class="top"><a href="#/" class="logo">⚡ VIBEHAI</a>${m.is_admin ? '<a class="pill v" href="#/admin">ADMIN</a>' : ''}</div>
     <h1>Your wallet</h1>
+    <a class="btn sm ghost" id="myp" href="#/me">👤 My public profile</a>
     <div class="row" style="margin-top:14px">
       <div class="stat"><b style="color:var(--g)">₹${m.earned_inr}</b><span>Earned</span></div>
       <div class="stat"><b>₹${m.paid_inr}</b><span>Paid out</span></div>
@@ -366,6 +392,7 @@ async function wallet() {
     ${m.reels.map(r => `<div class="card reelrow"><video src="${pub(r.video_path)}#t=0.5" muted playsinline preload="metadata"></video><div><b>${esc(r.event)}</b><div style="margin-top:6px">${badge(r)}</div>${pay(r)}<div class="mut sm" style="margin-top:6px">${fmtD(r.created_at)}</div></div></div>`).join('') || '<p class="mut">No reels yet. Scan the QR at your next event.</p>'}
     <p class="mut sm center" style="margin-top:24px">Your account lives on this phone's browser. Don't clear Safari data, or you'll lose access.</p>
   </div>${nav('me')}`;
+  rpc('vh_my_social').then(x => { const a = $('#myp'); if (a) { a.href = `#/u/${x.pid}`; a.textContent = `👤 My profile · ${x.followers} followers · ${x.following} following`; } }).catch(() => {});
   $('#sv').onclick = async () => { try { await rpc('vh_save_profile', { p_name: $('#nm').value.trim(), p_upi: $('#upi').value.trim(), p_instagram: $('#ig').value.trim().replace(/^@/, '') }); toast('Saved ✅'); } catch (e) { toast(e.message); } };
 }
 
@@ -494,6 +521,55 @@ async function admin(tab) {
     const txt = `${r.caption || ''}\n\n🎥 Filmed by ${r.instagram ? '@' + r.instagram : (r.creator_name || 'a VibeHai fan')} at ${r.event}\n✅ Location-verified on VibeHai\n\n#VibeHai #YaarVibeHai #EarnFromReels`;
     navigator.clipboard.writeText(txt).then(() => toast('Caption copied'), () => prompt('Copy caption', txt));
   });
+}
+
+// ---------- comments ----------
+async function openComments(reel, btn) {
+  const shade = document.createElement('div'); shade.className = 'shade';
+  const sh = document.createElement('div'); sh.className = 'sheet';
+  sh.innerHTML = `<div class="row" style="align-items:center"><b>💬 Comments</b><button class="btn sm ghost x" style="flex:none">✕</button></div><div class="cl"><p class="mut sm">Loading…</p></div>
+    <div class="row" style="align-items:center"><input class="ci" maxlength="300" placeholder="Add a comment…" style="margin:0"><button class="btn sm go" style="flex:none;margin:0 0 0 6px">Post</button></div>`;
+  document.body.append(shade, sh);
+  const close = () => { shade.remove(); sh.remove(); };
+  shade.onclick = close; sh.querySelector('.x').onclick = close; onLeave(close);
+  const load = async () => {
+    const l = await rpc('vh_comments_list', { p_reel: reel });
+    sh.querySelector('.cl').innerHTML = l.map(c => `<div class="cm" data-id="${c.id}"><a href="#/u/${c.pid}"><b>@${esc(c.who)}</b></a> ${esc(c.body)}<div class="mut sm">${ago(c.at)}${c.mine ? ' · <a href="#" class="dc" style="color:#ff7a7a">delete</a>' : ''}</div></div>`).join('') || '<p class="mut sm">No comments yet. Be the first.</p>';
+    sh.querySelectorAll('.dc').forEach(a => a.onclick = async ev => { ev.preventDefault(); try { await rpc('vh_delete_comment', { p_id: a.closest('.cm').dataset.id }); load(); } catch (e) { toast(e.message); } });
+    const cl = sh.querySelector('.cl'); cl.scrollTop = cl.scrollHeight;
+    if (btn) btn.querySelector('span').textContent = l.length;
+  };
+  sh.querySelector('.go').onclick = async () => { const i = sh.querySelector('.ci'), v = i.value.trim(); if (!v) return; try { await rpc('vh_comment', { p_reel: reel, p_body: v }); i.value = ''; load(); } catch (e) { toast(e.message); } };
+  load().catch(e => toast(e.message));
+}
+
+// ---------- creator profile ----------
+async function profile(pid) {
+  await ready;
+  const p = await rpc('vh_profile', { p_pid: pid });
+  if (!p) { app.innerHTML = `<div class="wrap"><div class="top"><a href="#/" class="logo">⚡ VIBEHAI</a></div><div class="card">Creator not found.</div></div>${nav('')}`; return; }
+  app.innerHTML = `<div class="wrap"><div class="top"><a href="#/" class="logo">⚡ VIBEHAI</a></div>
+    <div class="center"><div class="big">🎥</div><h1>@${esc(p.name)}</h1>${p.instagram ? `<a class="mut sm" href="https://instagram.com/${encodeURIComponent(p.instagram)}" target="_blank">Instagram ↗</a>` : ''}</div>
+    <div class="row" style="margin-top:14px"><div class="stat"><b id="pf">${p.followers}</b><span>Followers</span></div><div class="stat"><b>${p.reels.length}</b><span>Reels</span></div><div class="stat"><b style="color:var(--gold)">${p.picked}</b><span>Picked</span></div></div>
+    ${p.is_me ? '<p class="mut sm center" style="margin-top:10px">This is your public profile.</p>' : `<button class="btn ${p.following ? 'ghost' : ''}" id="fl">${p.following ? 'Following ✓' : '+ Follow'}</button>`}
+    <div class="grid">${p.reels.map(r => `<a href="#/feed?e=${r.slug}"><video src="${pub(r.video_path)}#t=0.5" muted playsinline preload="metadata"></video><span>${r.featured ? '⭐ ' : ''}👁 ${r.views}</span></a>`).join('')}</div>
+    ${p.reels.length ? '' : '<p class="mut center" style="margin-top:14px">No live reels yet.</p>'}</div>${nav('')}`;
+  const fl = $('#fl'); if (fl) fl.onclick = async () => { try { const r = await rpc('vh_follow', { p_kind: 'creator', p_target: pid }); fl.className = 'btn' + (r.following ? ' ghost' : ''); fl.textContent = r.following ? 'Following ✓' : '+ Follow'; $('#pf').textContent = r.followers; } catch (e) { toast(e.message); } };
+}
+
+// ---------- organiser page ----------
+async function orgPage(name) {
+  await ready;
+  const o = await rpc('vh_org', { p_name: name });
+  if (!o) { app.innerHTML = `<div class="wrap"><div class="top"><a href="#/" class="logo">⚡ VIBEHAI</a></div><div class="card">Organiser not found.</div></div>${nav('')}`; return; }
+  const now = Date.now();
+  app.innerHTML = `<div class="wrap"><div class="top"><a href="#/" class="logo">⚡ VIBEHAI</a><span class="pill g">✅ VERIFIED ORGANISER</span></div>
+    <h1>${esc(o.name)}</h1>
+    <div class="row" style="margin-top:14px"><div class="stat"><b id="of">${o.followers}</b><span>Followers</span></div><div class="stat"><b>${o.events.length}</b><span>Events</span></div><div class="stat"><b>${o.events.reduce((a, e) => a + e.reel_count, 0)}</b><span>Reels</span></div></div>
+    <button class="btn ${o.following ? 'ghost' : ''}" id="fl">${o.following ? 'Following ✓' : '+ Follow'}</button>
+    <h2>Events</h2>${o.events.map(e => `<div class="card"><b>${esc(e.name)}</b><div class="mut sm">${esc(e.venue || '')} · ${fmtD(e.starts_at)}</div>
+      <a class="btn sm ghost" href="#/feed?e=${e.slug}">▶ ${e.reel_count} reels</a>${new Date(e.ends_at) <= now ? `<a class="btn sm line" href="#/movie/${e.slug}">🎬 Aftermovie</a>` : ''}</div>`).join('')}</div>${nav('')}`;
+  $('#fl').onclick = async () => { try { const r = await rpc('vh_follow', { p_kind: 'org', p_target: name }); $('#fl').className = 'btn' + (r.following ? ' ghost' : ''); $('#fl').textContent = r.following ? 'Following ✓' : '+ Follow'; $('#of').textContent = r.followers; } catch (e) { toast(e.message); } };
 }
 
 // ---------- organiser dashboard (per event) ----------
