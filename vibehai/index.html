@@ -372,15 +372,25 @@ async function admin(tab) {
   let m = await me();
   if (!m.is_admin) {
     app.innerHTML = `<div class="wrap"><div class="top"><a href="#/" class="logo">⚡ VIBEHAI</a></div><h1>Organiser admin</h1>
-      <div class="card"><p class="mut">The first phone to claim admin becomes the VibeHai admin. Others get nothing.</p><button class="btn" id="cl">Claim admin on this phone</button></div></div>${nav('')}`;
-    $('#cl').onclick = async () => { const r = await rpc('vh_claim_admin'); if (r.ok) { toast('You are the admin ✅'); admin(); } else toast('An admin already exists'); };
+      <div class="card"><b>Admin login</b>
+        <input id="au" placeholder="Admin ID" autocapitalize="none" autocomplete="username" style="margin-top:10px">
+        <input id="ap" type="password" placeholder="Password" autocomplete="current-password" style="margin-top:8px">
+        <button class="btn" id="cl" style="margin-top:12px">Log in</button></div></div>${nav('')}`;
+    $('#cl').onclick = async () => {
+      const u = $('#au').value.trim(), p = $('#ap').value;
+      if (!u || !p) return toast('Enter ID and password');
+      $('#cl').disabled = true;
+      try { const r = await rpc('vh_admin_login', { p_user: u, p_pass: p }); if (r.ok) { toast('Logged in ✅'); admin(); } else { toast(r.reason); $('#cl').disabled = false; } }
+      catch (e) { toast(e.message); $('#cl').disabled = false; }
+    };
     return;
   }
   tab = tab || 'review';
   const t = (k, l) => `<a class="btn sm ${tab === k ? '' : 'ghost'}" href="#/admin/${k}">${l}</a>`;
-  app.innerHTML = `<div class="wrap"><div class="top"><a href="#/" class="logo">⚡ VIBEHAI</a><span class="pill v">ADMIN</span></div>
+  app.innerHTML = `<div class="wrap"><div class="top"><a href="#/" class="logo">⚡ VIBEHAI</a><span><span class="pill v">ADMIN</span> <a href="#" id="lo" class="mut sm" style="margin-left:8px">Log out</a></span></div>
     <div id="stats" class="row"></div><div style="margin-top:10px">${t('review', 'Review')}${t('picked', 'Picked & payouts')}${t('events', 'Events')}</div><div id="body"><p class="mut" style="margin-top:14px">Loading…</p></div></div>${nav('')}`;
   rpc('vh_admin_stats').then(s => { $('#stats').innerHTML = `<div class="stat"><b>${s.fans}</b><span>Fans</span></div><div class="stat"><b>${s.reels}</b><span>Reels</span></div><div class="stat"><b>${s.pending}</b><span>To review</span></div><div class="stat"><b style="color:var(--g)">₹${s.payout_due}</b><span>Due</span></div>`; });
+  $('#lo').onclick = async ev => { ev.preventDefault(); await rpc('vh_admin_logout'); toast('Logged out'); admin(); };
   const body = $('#body');
   if (tab === 'events') {
     const evs = await rpc('vh_events_list', {}, false);
