@@ -1,0 +1,564 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
+<meta name="theme-color" content="#07050d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Vibematcher · Same moment. Same vibe.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&family=Space+Mono&display=swap" rel="stylesheet">
+<style>
+:root{--pk:#FF2E93;--cy:#00F0FF;--lm:#C6FF00;--vi:#8B3DFF;--bg:#07050d;--card:#110d1c;--el:#1a1428;--bd:rgba(255,255,255,.09);--t2:#a39cb5;--red:#ff5470}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{background:var(--bg);color:#fff;font-family:'DM Sans',system-ui,sans-serif;font-size:15px;line-height:1.45;overscroll-behavior-y:none}
+body:before{content:'';position:fixed;inset:0;z-index:-1;background:radial-gradient(60% 40% at 0% 0%,rgba(139,61,255,.28),transparent 70%),radial-gradient(50% 35% at 100% 20%,rgba(255,46,147,.18),transparent 70%),radial-gradient(60% 40% at 50% 110%,rgba(0,240,255,.12),transparent 70%)}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit}
+.wrap{max-width:520px;margin:0 auto;padding:calc(12px + env(safe-area-inset-top)) 16px calc(96px + env(safe-area-inset-bottom));min-height:100vh}
+.top{display:flex;align-items:center;justify-content:space-between;padding:4px 0 14px;gap:10px}
+.logo{font-family:'Bebas Neue';font-size:30px;letter-spacing:3px;background:linear-gradient(90deg,var(--pk),var(--vi),var(--cy));-webkit-background-clip:text;background-clip:text;color:transparent;white-space:nowrap}
+h1{font-family:'Bebas Neue';font-size:46px;letter-spacing:1.5px;line-height:.95}
+h2{font-family:'Bebas Neue';font-size:26px;letter-spacing:1.5px;margin:22px 0 8px}
+h3{font-size:17px;margin-bottom:4px}
+.mut{color:var(--t2)}.sm{font-size:12.5px}.c{text-align:center}
+.neon{color:var(--lm);text-shadow:0 0 18px rgba(198,255,0,.5)}
+.pill{font-family:'Space Mono';font-size:10.5px;letter-spacing:1.2px;text-transform:uppercase;padding:4px 9px;border-radius:20px;border:1px solid var(--bd);color:var(--t2);display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.pill.live{border-color:var(--lm);color:var(--lm);background:rgba(198,255,0,.08)}
+.pill.live:before{content:'';width:6px;height:6px;border-radius:50%;background:var(--lm);box-shadow:0 0 8px var(--lm);animation:bl 1.2s infinite}
+.pill.pk{border-color:var(--pk);color:#ff7dbb;background:rgba(255,46,147,.1)}
+.pill.cy{border-color:var(--cy);color:var(--cy);background:rgba(0,240,255,.07)}
+@keyframes bl{50%{opacity:.25}}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:18px;padding:16px;margin:12px 0}
+.card.glow{border-color:rgba(255,46,147,.6);box-shadow:0 0 36px rgba(255,46,147,.18)}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:52px;border-radius:14px;border:0;font:700 15px 'DM Sans';letter-spacing:.3px;background:linear-gradient(90deg,var(--pk),var(--vi));color:#fff;cursor:pointer;margin-top:12px;box-shadow:0 6px 24px rgba(255,46,147,.25)}
+.btn.ghost{background:rgba(255,255,255,.07);box-shadow:none}
+.btn.line{background:transparent;border:1px solid rgba(0,240,255,.5);color:var(--cy);box-shadow:none}
+.btn.lm{background:var(--lm);color:#000;box-shadow:0 6px 24px rgba(198,255,0,.25)}
+.btn.red{background:rgba(255,84,112,.15);color:var(--red);box-shadow:none;border:1px solid rgba(255,84,112,.4)}
+.btn.sm{height:36px;font-size:13px;width:auto;padding:0 14px;margin:6px 6px 0 0;display:inline-flex;border-radius:10px}
+.btn:disabled{opacity:.4}
+input,textarea,select{width:100%;background:var(--el);border:1px solid var(--bd);border-radius:12px;color:#fff;font:16px 'DM Sans';padding:13px;margin-top:6px;-webkit-appearance:none;appearance:none}
+input:focus,textarea:focus{outline:none;border-color:var(--pk)}
+label{display:block;margin-top:14px;font-size:13px;color:var(--t2)}
+.row{display:flex;gap:10px}.row>*{flex:1}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.chip{padding:9px 14px;border-radius:30px;border:1px solid var(--bd);background:var(--el);font-size:14px;cursor:pointer;user-select:none}
+.chip.on{border-color:var(--pk);background:rgba(255,46,147,.16);color:#fff;box-shadow:0 0 14px rgba(255,46,147,.3)}
+.seg{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px;margin-top:8px}
+.seg .chip{text-align:center}
+.tag{display:inline-block;font-size:12px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.1);margin:3px 4px 0 0}
+.tag.hot{background:rgba(198,255,0,.16);color:var(--lm)}
+.safety{display:flex;gap:10px;align-items:flex-start;background:rgba(0,240,255,.06);border:1px solid rgba(0,240,255,.25);border-radius:14px;padding:10px 12px;font-size:13px;margin:10px 0}
+.nav{position:fixed;left:0;right:0;bottom:0;background:rgba(7,5,13,.9);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-top:1px solid var(--bd);display:flex;justify-content:space-around;padding:8px 0 calc(8px + env(safe-area-inset-bottom));z-index:20}
+.nav a{display:flex;flex-direction:column;align-items:center;font-size:10px;color:var(--t2);font-family:'Space Mono';letter-spacing:1px;min-width:70px;position:relative}
+.nav a i{font-style:normal;font-size:22px}
+.nav a.on{color:#ff7dbb}
+.nav .dot{position:absolute;top:0;right:18px;width:9px;height:9px;border-radius:50%;background:var(--pk);box-shadow:0 0 8px var(--pk)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(100px + env(safe-area-inset-bottom));background:#221a35;border:1px solid var(--bd);padding:11px 16px;border-radius:14px;z-index:99;font-size:14px;max-width:90%;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.ev{display:block;position:relative;overflow:hidden}
+.ev .meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.moment{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;background:var(--el);margin-top:8px;border:1px solid transparent}
+.moment.on{border-color:rgba(198,255,0,.5);background:rgba(198,255,0,.06)}
+.moment .t{flex:1;min-width:0}
+.moment .t b{display:block;font-size:15px;word-wrap:break-word}
+.felt{flex:none;border:1px solid rgba(255,46,147,.6);background:transparent;color:#ff7dbb;border-radius:12px;padding:9px 11px;font:700 12.5px 'DM Sans';cursor:pointer;min-width:94px}
+.moment.on .felt{background:var(--lm);border-color:var(--lm);color:#000}
+.deck{position:relative;height:min(68vh,560px);margin-top:6px}
+.pcard{position:absolute;inset:0;border-radius:24px;overflow:hidden;background:#000 center/cover no-repeat;box-shadow:0 18px 50px rgba(0,0,0,.6);touch-action:none;user-select:none;-webkit-user-select:none;will-change:transform;border:1px solid var(--bd)}
+.pcard .grad{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.25) 0%,transparent 30%,transparent 45%,rgba(7,5,13,.96) 100%)}
+.pcard .info{position:absolute;left:0;right:0;bottom:0;padding:18px}
+.pcard .nm{font-family:'Bebas Neue';font-size:42px;letter-spacing:1px;line-height:1}
+.pcard .vibe{margin-top:10px;padding:10px 12px;border-radius:14px;background:rgba(198,255,0,.12);border:1px solid rgba(198,255,0,.4);font-size:13.5px}
+.pcard .stamp{position:absolute;top:28px;font-family:'Bebas Neue';font-size:44px;letter-spacing:2px;padding:2px 14px;border-radius:10px;border:4px solid;opacity:0;transform:rotate(-14deg)}
+.pcard .stamp.like{left:22px;color:var(--lm);border-color:var(--lm)}
+.pcard .stamp.nope{right:22px;color:var(--red);border-color:var(--red);transform:rotate(14deg)}
+.pcard .more{position:absolute;top:12px;right:12px;width:38px;height:38px;border-radius:50%;background:rgba(0,0,0,.55);border:0;color:#fff;font-size:20px;z-index:3}
+.actions{display:flex;justify-content:center;gap:26px;margin-top:16px}
+.actions button{width:66px;height:66px;border-radius:50%;border:2px solid;background:rgba(0,0,0,.4);font-size:28px;cursor:pointer}
+.actions .no{border-color:var(--red);color:var(--red)}
+.actions .yes{border-color:var(--lm);color:var(--lm);box-shadow:0 0 24px rgba(198,255,0,.3)}
+.modal{position:fixed;inset:0;background:rgba(5,3,10,.86);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);z-index:60;display:flex;align-items:center;justify-content:center;padding:24px}
+.modal .box{width:100%;max-width:420px;background:var(--card);border:1px solid var(--bd);border-radius:22px;padding:22px}
+.sheet{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--bd);border-radius:22px 22px 0 0;z-index:70;padding:18px 16px calc(18px + env(safe-area-inset-bottom));max-width:520px;margin:0 auto}
+.match-av{display:flex;justify-content:center;margin:16px 0}
+.match-av img{width:110px;height:110px;border-radius:50%;object-fit:cover;border:3px solid var(--pk);box-shadow:0 0 30px rgba(255,46,147,.5)}
+.match-av img+img{margin-left:-22px;border-color:var(--cy);box-shadow:0 0 30px rgba(0,240,255,.4)}
+.mrow{display:flex;gap:12px;align-items:center;padding:12px;border-radius:16px;background:var(--card);border:1px solid var(--bd);margin-top:10px}
+.av{width:56px;height:56px;border-radius:50%;object-fit:cover;flex:none;background:var(--el)}
+.mrow .t{flex:1;min-width:0}
+.mrow .t div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chat{position:fixed;inset:0;display:flex;flex-direction:column;max-width:520px;margin:0 auto;background:var(--bg)}
+.chat-h{display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top)) 12px 10px;border-bottom:1px solid var(--bd);background:rgba(7,5,13,.95)}
+.chat-h .av{width:42px;height:42px}
+.chat-b{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px}
+.msg{max-width:78%;padding:9px 13px;border-radius:18px;margin:4px 0;word-wrap:break-word;white-space:pre-wrap;font-size:15px}
+.msg.me{margin-left:auto;background:linear-gradient(90deg,var(--pk),var(--vi));border-bottom-right-radius:6px}
+.msg.them{background:var(--el);border-bottom-left-radius:6px}
+.chat-f{display:flex;gap:8px;padding:10px 12px calc(10px + env(safe-area-inset-bottom));border-top:1px solid var(--bd);background:rgba(7,5,13,.95)}
+.chat-f input{margin:0;border-radius:22px}
+.chat-f button{flex:none;width:48px;height:48px;border-radius:50%;border:0;background:var(--pk);color:#fff;font-size:20px}
+.iconbtn{background:rgba(255,255,255,.08);border:0;color:#fff;width:40px;height:40px;border-radius:50%;font-size:18px;flex:none}
+.photo-pick{width:140px;height:180px;border-radius:18px;border:2px dashed rgba(255,46,147,.6);display:flex;align-items:center;justify-content:center;background:var(--el) center/cover no-repeat;margin-top:8px;cursor:pointer;color:var(--t2);font-size:13px;text-align:center}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:var(--el);border-radius:14px;padding:10px;text-align:center}
+.stat b{display:block;font-family:'Bebas Neue';font-size:28px}
+.stat span{font-family:'Space Mono';font-size:9.5px;letter-spacing:1px;color:var(--t2);text-transform:uppercase}
+.code{font-family:'Space Mono';font-size:18px;letter-spacing:3px;color:var(--lm)}
+.hr{height:1px;background:var(--bd);margin:14px 0}
+.empty{text-align:center;padding:40px 10px}
+.empty .e{font-size:54px}
+details summary{cursor:pointer;color:var(--cy);font-size:13.5px;margin-top:12px;list-style:none}
+details summary::-webkit-details-marker{display:none}
+.spin{display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.loader{display:flex;justify-content:center;padding:60px}
+</style>
+</head>
+<body>
+<div id="app"><div class="loader"><span class="spin"></span></div></div>
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+const SB_URL = 'https://npprahzhjjujhyxznmbq.supabase.co';
+const SB_KEY = 'sb_publishable_i6vk6IQByH16Pj1YlSE9aA_5UrkK0NK';
+const sb = createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
+const BUCKET = 'vm-media';
+const TAGS = ['EDM','Bollywood','Cricket','Indie','Garba','Hip-Hop','Desi Hip-Hop','Punjabi','Techno','Rock','Sufi','K-Pop','Football','Stand-up','Retro','Metal'];
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const app = $('#app');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pub = p => p ? sb.storage.from(BUCKET).getPublicUrl(p).data.publicUrl : '';
+const fmtD = d => new Date(d).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+const fmtT = d => new Date(d).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' });
+const ago = d => { const m = Math.round((Date.now() - new Date(d)) / 6e4); return m < 1 ? 'abhi' : m < 60 ? m + 'm' : m < 1440 ? Math.round(m / 60) + 'h' : Math.round(m / 1440) + 'd'; };
+const left = d => { const ms = new Date(d) - Date.now(); if (ms <= 0) return 'expired'; const h = Math.floor(ms / 36e5); return h >= 24 ? Math.floor(h / 24) + 'd ' + (h % 24) + 'h' : h + 'h ' + Math.floor(ms % 36e5 / 6e4) + 'm'; };
+function toast(m, ms = 2800) { $$('.toast').forEach(t => t.remove()); const t = document.createElement('div'); t.className = 'toast'; t.textContent = m; document.body.appendChild(t); setTimeout(() => t.remove(), ms); }
+const SAFETY = `<div class="safety"><span>🛡️</span><div><b>Safety first, yaar.</b> Milna hai toh venue pe hi, public jagah, doston ke saath. Live location ya ghar ka address share mat karo. Kuch off lage? Block + report.</div></div>`;
+
+// ---------- device identity ----------
+function uuid() { return crypto.randomUUID ? crypto.randomUUID() : '10000000-1000-4000-8000-100000000000'.replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)); }
+let DEV = JSON.parse(localStorage.getItem('vm_dev') || 'null');
+if (!DEV) { const b = new Uint8Array(24); crypto.getRandomValues(b); DEV = { id: uuid(), secret: Array.from(b, x => x.toString(16).padStart(2, '0')).join('') }; localStorage.setItem('vm_dev', JSON.stringify(DEV)); }
+const A = () => ({ p_device: DEV.id, p_secret: DEV.secret });
+async function rpc(fn, args = {}) { const { data, error } = await sb.rpc(fn, { ...A(), ...args }); if (error) throw new Error(error.message); return data; }
+const ready = rpc('vm_register').catch(e => toast('Network issue: ' + e.message));
+let ME = null;
+async function me() { await ready; ME = await rpc('vm_me'); return ME; }
+
+// ---------- routing ----------
+let cleanup = [];
+const onLeave = f => cleanup.push(f);
+function every(ms, f) { const i = setInterval(() => { if (!document.hidden) f(); }, ms); onLeave(() => clearInterval(i)); }
+const nav = on => `<nav class="nav">
+  <a href="#/" class="${on === 'events' ? 'on' : ''}"><i>🎪</i>EVENTS</a>
+  <a href="#/matches" class="${on === 'matches' ? 'on' : ''}" id="navm"><i>💜</i>MATCHES</a>
+  <a href="#/me" class="${on === 'me' ? 'on' : ''}"><i>😎</i>PROFILE</a></nav>`;
+const top = (right = '') => `<div class="top"><a href="#/" class="logo">⚡ VIBEMATCHER</a>${right}</div>`;
+window.addEventListener('hashchange', render);
+
+async function render() {
+  cleanup.forEach(f => { try { f(); } catch (e) {} }); cleanup = [];
+  $$('.modal,.sheet').forEach(x => x.remove());
+  window.scrollTo(0, 0);
+  const parts = location.hash.replace(/^#\/?/, '').split('?')[0].split('/').filter(Boolean);
+  try {
+    if (localStorage.getItem('vm_underage')) return underage();
+    if (parts[0] === 'admin') return await admin();
+    const m = await me();
+    if (m.banned) return banned();
+    if (!m.onboarded || parts[0] === 'edit') return await onboard(!m.onboarded);
+    switch (parts[0]) {
+      case 'e': return await eventHome(parts[1]);
+      case 'deck': return await deck(parts[1]);
+      case 'matches': return await matches();
+      case 'chat': return await chat(parts[1]);
+      case 'me': return await profile();
+      default: return await events();
+    }
+  } catch (e) {
+    app.innerHTML = `<div class="wrap">${top()}<div class="card">Kuch gadbad ho gayi: ${esc(e.message)}</div><button class="btn" onclick="location.reload()">Reload</button></div>`;
+  }
+}
+
+function underage() {
+  app.innerHTML = `<div class="wrap">${top()}<div class="empty"><div class="e">🔞</div><h1>18+ only</h1><p class="mut" style="margin-top:10px">Vibematcher sirf 18 saal se upar walon ke liye hai. Fest enjoy karo, doston ke saath! 🎉</p></div></div>`;
+}
+function banned() {
+  app.innerHTML = `<div class="wrap">${top()}<div class="empty"><div class="e">⛔</div><h1>Account restricted</h1><p class="mut" style="margin-top:10px">This device was banned after a safety review.</p></div></div>`;
+}
+
+// ---------- onboarding / edit profile ----------
+async function resizeImage(file) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('Photo read nahi hui. Try a JPG/PNG.')); i.src = url; });
+    const max = 1000, s = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = document.createElement('canvas'); c.width = Math.round(img.naturalWidth * s); c.height = Math.round(img.naturalHeight * s);
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    return await new Promise(res => c.toBlob(res, 'image/jpeg', 0.85));
+  } finally { URL.revokeObjectURL(url); }
+}
+
+async function onboard(first) {
+  const m = ME;
+  const st = { tags: [...(m.tags || [])], gender: m.gender, interested: m.interested_in, photo: m.photo_path };
+  app.innerHTML = `<div class="wrap">${top(first ? '' : '<a href="#/me" class="pill">✕ Cancel</a>')}
+    ${first ? `<h1>Same moment.<br><span class="neon">Same vibe.</span></h1>
+    <p class="mut" style="margin:10px 0 4px">Fest, concert, IPL match. Jo moment tumne feel kiya, wahi kisi aur ne bhi kiya. Unse milo. ⚡</p>` : '<h1>Edit profile</h1>'}
+    <div class="card">
+      <label>Your name (sirf first name dikhega)</label><input id="nm" maxlength="40" autocomplete="given-name" value="${esc(m.name || '')}" placeholder="e.g. Harsh">
+      <label>Age</label><input id="age" type="number" inputmode="numeric" min="1" max="99" value="${esc(m.age || '')}" placeholder="18+">
+      <label>I am</label><div class="seg" id="gen">${[['man','Man'],['woman','Woman'],['nonbinary','Non-binary']].map(([v,l]) => `<div class="chip ${st.gender === v ? 'on' : ''}" data-v="${v}">${l}</div>`).join('')}</div>
+      <label>Match me with</label><div class="seg" id="int">${[['women','Women'],['men','Men'],['everyone','Everyone'],['friends','Friends only 🤝']].map(([v,l]) => `<div class="chip ${st.interested === v ? 'on' : ''}" data-v="${v}">${l}</div>`).join('')}</div>
+      <div class="sm mut" style="margin-top:6px">Friends only = sirf dosti, matches only with other friends-mode people.</div>
+      <label>One photo of you (clear face, no group pics)</label>
+      <div class="photo-pick" id="pp" style="${st.photo ? `background-image:url('${pub(st.photo)}')` : ''}">${st.photo ? '' : '📸<br>Tap to add'}</div>
+      <input type="file" id="pf" accept="image/*" style="display:none">
+      <label>Pick 3 vibe tags <span id="tc">(${st.tags.length}/3)</span></label>
+      <div class="chips" id="tags">${TAGS.map(t => `<div class="chip ${st.tags.includes(t) ? 'on' : ''}" data-v="${esc(t)}">${esc(t)}</div>`).join('')}</div>
+      <label>Instagram (optional, sirf mutual match ko dikhega)</label><input id="ig" autocapitalize="off" autocorrect="off" value="${esc(m.instagram || '')}" placeholder="@yourhandle">
+      ${first ? `<label style="display:flex;gap:10px;align-items:center;color:#fff"><input type="checkbox" id="c18" style="width:22px;height:22px;margin:0;flex:none;-webkit-appearance:checkbox;appearance:auto"> I confirm I'm 18 or older and will follow the safety rules.</label>` : ''}
+      <button class="btn" id="go">${first ? "Let's vibe ⚡" : 'Save'}</button>
+    </div>${SAFETY}</div>`;
+  const one = (id, key) => $$(`#${id} .chip`).forEach(c => c.onclick = () => { $$(`#${id} .chip`).forEach(x => x.classList.remove('on')); c.classList.add('on'); st[key] = c.dataset.v; });
+  one('gen', 'gender'); one('int', 'interested');
+  $$('#tags .chip').forEach(c => c.onclick = () => {
+    const v = c.dataset.v;
+    if (st.tags.includes(v)) st.tags = st.tags.filter(x => x !== v); else { if (st.tags.length >= 3) return toast('Bas 3 tags, boss'); st.tags.push(v); }
+    c.classList.toggle('on', st.tags.includes(v)); $('#tc').textContent = `(${st.tags.length}/3)`;
+  });
+  $('#pp').onclick = () => $('#pf').click();
+  $('#pf').onchange = async e => {
+    const f = e.target.files[0]; if (!f) return;
+    const pp = $('#pp'); pp.innerHTML = '<span class="spin"></span>';
+    try {
+      const blob = await resizeImage(f);
+      const path = `photos/${DEV.id}/${uuid()}.jpg`;
+      const { error } = await sb.storage.from(BUCKET).upload(path, blob, { contentType: 'image/jpeg', upsert: false });
+      if (error) throw new Error(error.message);
+      st.photo = path; pp.style.backgroundImage = `url('${pub(path)}')`; pp.innerHTML = '';
+    } catch (er) { pp.innerHTML = '📸<br>Tap to add'; toast('Upload failed: ' + er.message); }
+  };
+  $('#go').onclick = async () => {
+    const age = parseInt($('#age').value, 10);
+    if (!$('#nm').value.trim()) return toast('Naam toh batao 🙂');
+    if (!age) return toast('Age daalo');
+    if (age < 18) { localStorage.setItem('vm_underage', '1'); return underage(); }
+    if (!st.gender) return toast('Pick your gender');
+    if (!st.interested) return toast('Kiske saath match karna hai?');
+    if (!st.photo) return toast('Ek photo add karo');
+    if (st.tags.length !== 3) return toast('Exactly 3 vibe tags chuno');
+    if (first && !$('#c18').checked) return toast('Please confirm 18+ and safety rules');
+    const b = $('#go'); b.disabled = true;
+    try {
+      await rpc('vm_save_profile', { p_name: $('#nm').value.trim(), p_age: age, p_gender: st.gender, p_interested: st.interested, p_photo: st.photo, p_tags: st.tags, p_instagram: $('#ig').value.trim().replace(/^@/, '') });
+      toast(first ? 'Profile ready! Ab event join karo 🎪' : 'Saved ✅'); const to = first ? '#/' : '#/me'; if (location.hash === to || (!location.hash && first)) render(); else location.hash = to;
+    } catch (er) { toast(er.message); b.disabled = false; }
+  };
+}
+
+// ---------- events ----------
+const stateP = s => s === 'live' ? '<span class="pill live">LIVE</span>' : s === 'upcoming' ? '<span class="pill cy">UPCOMING</span>' : '<span class="pill">ENDED</span>';
+async function events() {
+  const list = await rpc('vm_events_list');
+  app.innerHTML = `<div class="wrap">${top(`<a href="#/me"><img class="av" style="width:38px;height:38px" src="${esc(pub(ME.photo_path))}" alt=""></a>`)}
+    <h1>Kaunse event<br>pe ho? <span class="neon">🎪</span></h1>
+    <p class="mut" style="margin-top:8px">Venue pe pahucho, check in karo, moments feel karo, aur same-vibe wale log se match.</p>
+    ${list.length ? list.map(e => `<a class="card ev ${e.state === 'live' ? 'glow' : ''}" href="#/e/${e.id}">
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><h3>${esc(e.name)}</h3>${stateP(e.state)}</div>
+      <div class="mut sm">📍 ${esc(e.venue || 'Venue')} · ${fmtD(e.starts_at)} → ${fmtD(e.ends_at)}</div>
+      <div class="meta">${e.checked_in ? '<span class="pill pk">✓ CHECKED IN</span>' : ''}<span class="pill">👥 ${e.people} here</span></div></a>`).join('')
+    : `<div class="empty"><div class="e">🌙</div><p class="mut">Abhi koi event live nahi hai. Organiser jaldi add karega.</p></div>`}
+  </div>${nav('events')}`;
+  badge();
+}
+
+function getPos() {
+  return new Promise((res, rej) => {
+    if (!navigator.geolocation) return rej(new Error('GPS not available on this browser'));
+    navigator.geolocation.getCurrentPosition(p => res(p.coords), e => rej(new Error(e.code === 1 ? 'Location permission denied. Settings > Safari > Location > Allow.' : 'Location nahi mili, open area mein try karo.')), { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+  });
+}
+
+async function eventHome(id) {
+  const ev = await rpc('vm_event_home', { p_event: id });
+  const draw = (ev) => {
+    const live = ev.state === 'live';
+    app.innerHTML = `<div class="wrap">${top('<a href="#/" class="pill">← Events</a>')}
+      <div>${stateP(ev.state)} <span class="pill">👥 ${ev.people} here</span></div>
+      <h1 style="margin-top:10px">${esc(ev.name)}</h1>
+      <div class="mut sm" style="margin-top:4px">📍 ${esc(ev.venue || '')} · ${fmtD(ev.starts_at)} → ${fmtD(ev.ends_at)}</div>
+      ${!ev.checked_in ? `<div class="card glow">
+          <h3>Check in at the venue</h3>
+          <p class="mut sm">${live ? `We'll check you're inside the venue using GPS (one time only). Tumhari location kisi ko nahi dikhegi.` : ev.state === 'upcoming' ? `Check-in khulega jab event shuru hoga (${fmtD(ev.starts_at)}).` : 'Event khatam. Check-in closed.'}</p>
+          <button class="btn" id="ci" ${live ? '' : 'disabled'}>📍 I'm here, check me in</button>
+          ${live ? `<details><summary>GPS issue? Use join code</summary><div class="row" style="margin-top:6px"><input id="jc" placeholder="JOIN CODE" autocapitalize="characters" style="text-transform:uppercase"><button class="btn sm" id="jcb" style="flex:none;height:48px;margin-top:6px">Join</button></div></details>` : ''}
+        </div>`
+      : `<a class="btn lm" href="#/deck/${ev.id}" ${ev.deck_open ? '' : 'style="opacity:.4;pointer-events:none"'}>🔥 Open Vibe Deck</a>
+         <div class="sm mut c" style="margin-top:6px">${ev.my_felt ? `You felt ${ev.my_felt} moment${ev.my_felt > 1 ? 's' : ''}. Jitne zyada shared moments, utna strong match.` : 'Moments feel karo, matches better honge 👇'}</div>
+         <h2>⚡ Moments</h2>
+         ${live ? `<div class="row"><input id="mt" maxlength="80" placeholder="Post a moment: 'The drop at 9:42'"><button class="btn sm" id="mp" style="flex:none;height:48px;margin-top:6px">Post</button></div>` : '<div class="mut sm">Event over, moments locked 🔒</div>'}
+         <div id="ml">${ev.moments.length ? ev.moments.map(mo => `<div class="moment ${mo.i_felt ? 'on' : ''}" data-id="${mo.id}">
+             <div class="t"><b>${esc(mo.title)}</b><span class="sm mut">${mo.official ? '📢 Organiser' : mo.mine ? 'You posted' : 'Crowd'} · ${fmtT(mo.at)} · <span class="fc">${mo.felt}</span> felt it</span></div>
+             <button class="felt" ${live ? '' : 'disabled'}>${mo.i_felt ? '✓ Felt it' : '💥 I felt this'}</button></div>`).join('')
+           : '<div class="mut sm" style="margin-top:8px">No moments yet. Pehla moment tum post karo!</div>'}</div>`}
+      ${SAFETY}</div>${nav('events')}`;
+    const ci = $('#ci');
+    if (ci) ci.onclick = async () => {
+      ci.disabled = true; ci.innerHTML = '<span class="spin"></span> Checking location…';
+      try { const c = await getPos(); const r = await rpc('vm_checkin', { p_event: id, p_lat: c.latitude, p_lng: c.longitude, p_accuracy: c.accuracy, p_code: '' });
+        if (r.ok) { toast("You're in! 🎉"); reload(); } else { toast(r.reason, 4000); ci.disabled = false; ci.textContent = "📍 I'm here, check me in"; }
+      } catch (e) { toast(e.message, 4500); ci.disabled = false; ci.textContent = "📍 I'm here, check me in"; }
+    };
+    const jcb = $('#jcb');
+    if (jcb) jcb.onclick = async () => { try { const r = await rpc('vm_checkin', { p_event: id, p_lat: null, p_lng: null, p_accuracy: null, p_code: $('#jc').value }); if (r.ok) { toast("You're in! 🎉"); reload(); } else toast(r.reason); } catch (e) { toast(e.message); } };
+    const mp = $('#mp');
+    if (mp) mp.onclick = async () => { const t = $('#mt').value.trim(); if (t.length < 3) return toast('Thoda aur likho'); mp.disabled = true; try { await rpc('vm_post_moment', { p_event: id, p_title: t }); toast('Moment posted ⚡'); reload(); } catch (e) { toast(e.message); mp.disabled = false; } };
+    $$('.moment .felt').forEach(b => b.onclick = async () => {
+      const row = b.closest('.moment'), on = !row.classList.contains('on');
+      row.classList.toggle('on', on); b.textContent = on ? '✓ Felt it' : '💥 I felt this';
+      try { const r = await rpc('vm_feel', { p_moment: row.dataset.id, p_on: on }); row.querySelector('.fc').textContent = r.felt; if (on && navigator.vibrate) navigator.vibrate(20); }
+      catch (e) { row.classList.toggle('on', !on); b.textContent = !on ? '✓ Felt it' : '💥 I felt this'; toast(e.message); }
+    });
+  };
+  const reload = async () => { const typing = document.activeElement && document.activeElement.tagName === 'INPUT'; if (typing) return; try { draw(await rpc('vm_event_home', { p_event: id })); } catch (e) {} };
+  draw(ev);
+  if (ev.checked_in && ev.state === 'live') every(15000, reload);
+  badge();
+}
+
+// ---------- deck ----------
+function moreSheet(target, name, matchId, after) {
+  const sh = document.createElement('div');
+  sh.innerHTML = `<div class="modal" style="z-index:65"></div><div class="sheet"><h3>${esc(name)}</h3>
+    <button class="btn red" id="rp">🚩 Report ${esc(name)}</button><button class="btn ghost" id="bk">🚫 Block</button><button class="btn ghost" id="cx">Cancel</button></div>`;
+  document.body.appendChild(sh);
+  const close = () => sh.remove();
+  sh.querySelector('.modal').onclick = close; sh.querySelector('#cx').onclick = close;
+  sh.querySelector('#bk').onclick = async () => { try { await rpc('vm_block', { p_target: target }); toast(`${name} blocked. Ab tumhe nahi dikhenge.`); close(); after && after(); } catch (e) { toast(e.message); } };
+  sh.querySelector('#rp').onclick = () => {
+    const box = sh.querySelector('.sheet');
+    box.innerHTML = `<h3>Report ${esc(name)}</h3><p class="mut sm">Report karte hi ye profile hide ho jayegi until our team reviews it. Tum unhe block bhi kar doge.</p>
+      <div class="chips" id="rr">${['Fake profile','Underage','Harassment / creepy','Nudity / explicit','Spam / scam','Something else'].map(r => `<div class="chip" data-v="${r}">${r}</div>`).join('')}</div>
+      <textarea id="rt" rows="2" maxlength="250" placeholder="Details (optional)"></textarea>
+      <button class="btn red" id="rs">Submit report</button><button class="btn ghost" id="cx2">Cancel</button>`;
+    let reason = '';
+    box.querySelectorAll('#rr .chip').forEach(c => c.onclick = () => { box.querySelectorAll('#rr .chip').forEach(x => x.classList.remove('on')); c.classList.add('on'); reason = c.dataset.v; });
+    box.querySelector('#cx2').onclick = close;
+    box.querySelector('#rs').onclick = async () => {
+      if (!reason) return toast('Reason chuno');
+      try { await rpc('vm_report', { p_target: target, p_match: matchId || null, p_reason: reason + (box.querySelector('#rt').value ? ': ' + box.querySelector('#rt').value : '') }); toast('Report sent. Thanks for keeping it safe 🛡️'); close(); after && after(); } catch (e) { toast(e.message); }
+    };
+  };
+}
+
+async function deck(eid) {
+  const [ev, cards] = await Promise.all([rpc('vm_event_home', { p_event: eid }), rpc('vm_deck', { p_event: eid })]);
+  let stack = cards.slice();
+  app.innerHTML = `<div class="wrap" style="padding-bottom:calc(90px + env(safe-area-inset-bottom))">${top(`<a href="#/e/${eid}" class="pill">← ${esc(ev.name.slice(0, 18))}</a>`)}
+    <div class="deck" id="dk"></div>
+    <div class="actions" id="acts"><button class="no" id="bn" aria-label="Pass">✕</button><button class="yes" id="by" aria-label="Like">💜</button></div>
+    <div class="sm mut c" style="margin-top:10px">Exact location ya distance kabhi nahi dikhaya jata.</div></div>${nav('events')}`;
+  const dk = $('#dk');
+  const cardHtml = c => `<div class="pcard" style="background-image:url('${esc(pub(c.photo_path))}')" data-id="${c.id}">
+    <div class="grad"></div><div class="stamp like">VIBE</div><div class="stamp nope">NOPE</div>
+    <button class="more" aria-label="Report or block">⋯</button>
+    <div class="info"><div class="nm">${esc(c.name)}, ${c.age}</div>
+      <div>${c.tags.map(t => `<span class="tag ${c.common_tags.includes(t) ? 'hot' : ''}">${esc(t)}</span>`).join('')}${c.friends ? '<span class="tag">🤝 Friends mode</span>' : ''}</div>
+      <div class="vibe">${c.shared_count ? `⚡ <b>You both felt ${c.shared_count} moment${c.shared_count > 1 ? 's' : ''}:</b> ${c.shared.slice(0, 3).map(esc).join(' · ')}${c.shared_count > 3 ? ' …' : ''}<br><span class="mut sm">Same moment. Same vibe.</span>` : `<span class="mut">Abhi koi shared moment nahi. Moments feel karo to boost your match!</span>`}</div>
+    </div></div>`;
+  const drawStack = () => {
+    if (!stack.length) {
+      dk.innerHTML = `<div class="empty card" style="height:100%;display:flex;flex-direction:column;justify-content:center"><div class="e">🫶</div><h2 style="margin-top:6px">Deck khatam!</h2><p class="mut">Abhi ke liye itna hi. Aur log check in kar rahe hain, thodi der mein dekho. Tab tak moments feel karo.</p><a class="btn ghost" href="#/e/${eid}">⚡ Back to moments</a></div>`;
+      $('#acts').style.display = 'none'; return;
+    }
+    $('#acts').style.display = '';
+    dk.innerHTML = stack.slice(0, 2).reverse().map(cardHtml).join('');
+    const topEl = dk.lastElementChild; attach(topEl);
+  };
+  let busy = false;
+  async function decide(like) {
+    if (busy || !stack.length) return; busy = true;
+    const c = stack[0], el = dk.lastElementChild;
+    el.style.transition = 'transform .35s ease, opacity .35s'; el.style.transform = `translateX(${like ? 140 : -140}%) rotate(${like ? 22 : -22}deg)`; el.style.opacity = '0';
+    if (navigator.vibrate) navigator.vibrate(like ? 25 : 10);
+    try {
+      const r = await rpc('vm_swipe', { p_event: eid, p_target: c.id, p_like: like });
+      if (r.matched) matchModal(r);
+    } catch (e) { toast(e.message); }
+    setTimeout(() => { stack.shift(); busy = false; drawStack(); }, 300);
+  }
+  function attach(el) {
+    el.querySelector('.more').onclick = e => { e.stopPropagation(); const c = stack[0]; moreSheet(c.id, c.name, null, () => { stack.shift(); drawStack(); }); };
+    el.querySelector('.more').addEventListener('pointerdown', e => e.stopPropagation());
+    let sx = 0, sy = 0, dx = 0, drag = false;
+    const like = el.querySelector('.stamp.like'), nope = el.querySelector('.stamp.nope');
+    el.addEventListener('pointerdown', e => { drag = true; sx = e.clientX; sy = e.clientY; dx = 0; el.style.transition = 'none'; el.setPointerCapture(e.pointerId); });
+    el.addEventListener('pointermove', e => { if (!drag) return; dx = e.clientX - sx; const dy = (e.clientY - sy) * .3; el.style.transform = `translate(${dx}px,${dy}px) rotate(${dx / 18}deg)`; like.style.opacity = Math.max(0, Math.min(1, dx / 90)); nope.style.opacity = Math.max(0, Math.min(1, -dx / 90)); });
+    const end = () => { if (!drag) return; drag = false; if (Math.abs(dx) > 100) decide(dx > 0); else { el.style.transition = 'transform .25s'; el.style.transform = ''; like.style.opacity = 0; nope.style.opacity = 0; } };
+    el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
+  }
+  $('#bn').onclick = () => decide(false); $('#by').onclick = () => decide(true);
+  drawStack();
+}
+
+function matchModal(r) {
+  const m = document.createElement('div'); m.className = 'modal';
+  m.innerHTML = `<div class="box c"><div class="pill pk">IT'S A MATCH</div><h1 style="margin-top:10px">Vibe <span class="neon">matched!</span> ⚡</h1>
+    <div class="match-av"><img src="${esc(pub(ME.photo_path))}" alt=""><img src="${esc(pub(r.photo_path))}" alt=""></div>
+    <p>${r.shared && r.shared.length ? `Both felt <b>${esc(r.shared[0])}</b>${r.shared.length > 1 ? ` + ${r.shared.length - 1} more` : ''}.<br><span class="neon">Same moment. Same vibe.</span>` : `You and ${esc(r.name)} liked each other.`}</p>
+    <a class="btn" href="#/chat/${r.match_id}">💬 Say hi to ${esc(r.name)}</a><button class="btn ghost" id="kc">Keep swiping</button>
+    <div class="sm mut" style="margin-top:10px">Chat 72 ghante baad expire hoti hai, jab tak dono "Keep vibe" na dabayein.</div></div>`;
+  document.body.appendChild(m); m.querySelector('#kc').onclick = () => m.remove();
+}
+
+// ---------- matches ----------
+async function badge() { try { const l = await rpc('vm_matches'); const seen = JSON.parse(localStorage.getItem('vm_seen') || '{}'); const n = l.some(x => x.last && !x.last.mine && seen[x.id] !== x.last.at); const a = $('#navm'); if (a && n && !a.querySelector('.dot')) a.insertAdjacentHTML('beforeend', '<span class="dot"></span>'); } catch (e) {} }
+async function matches() {
+  const draw = list => {
+    const seen = JSON.parse(localStorage.getItem('vm_seen') || '{}');
+    app.innerHTML = `<div class="wrap">${top()}<h1>Your <span class="neon">vibes</span> 💜</h1>
+      ${list.length ? list.map(m => `<a class="mrow" href="#/chat/${m.id}" style="${m.expired ? 'opacity:.5' : ''}">
+        <img class="av" src="${esc(pub(m.photo_path))}" alt="">
+        <div class="t"><div><b>${esc(m.name)}, ${m.age}</b> <span class="sm mut">· ${esc(m.event)}</span></div>
+          <div class="sm ${m.last && !m.last.mine && seen[m.id] !== m.last.at ? '' : 'mut'}">${m.last ? (m.last.mine ? 'You: ' : '') + esc(m.last.body) : (m.shared.length ? `⚡ Both felt: ${esc(m.shared[0])}` : 'New match! Say hi 👋')}</div>
+          <div class="sm" style="color:${m.kept ? 'var(--lm)' : 'var(--t2)'}">${m.kept ? '💚 Vibe kept' : m.expired ? 'Expired' : '⏳ ' + left(m.expires_at) + ' left'}</div></div>
+        ${m.last && !m.last.mine && seen[m.id] !== m.last.at ? '<span class="pill pk">NEW</span>' : ''}</a>`).join('')
+      : `<div class="empty"><div class="e">💫</div><p class="mut">Abhi koi match nahi. Event pe check in karo aur deck swipe karo!</p><a class="btn" href="#/">🎪 Find your event</a></div>`}
+      ${SAFETY}</div>${nav('matches')}`;
+  };
+  draw(await rpc('vm_matches'));
+  every(8000, async () => { try { draw(await rpc('vm_matches')); } catch (e) {} });
+}
+
+// ---------- chat ----------
+async function chat(mid) {
+  let last = 0, M = null;
+  const first = await rpc('vm_chat', { p_match: mid, p_after: 0 });
+  M = first.match;
+  app.innerHTML = `<div class="chat">
+    <div class="chat-h"><a href="#/matches" class="iconbtn" style="display:flex;align-items:center;justify-content:center">←</a>
+      <img class="av" src="${esc(pub(M.photo_path))}" alt="">
+      <div style="flex:1;min-width:0"><b>${esc(M.name)}, ${M.age}</b><div class="sm mut" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(M.event)}${M.instagram ? ` · <a href="https://instagram.com/${encodeURIComponent(M.instagram)}" target="_blank" rel="noopener" style="color:var(--pk)">@${esc(M.instagram)}</a>` : ''}</div></div>
+      <button class="iconbtn" id="mo" aria-label="Report or block">⋯</button></div>
+    <div class="chat-b" id="cb">
+      <div class="c" style="padding:8px 0 4px"><span class="pill pk">⚡ MATCHED AT ${esc(M.event.toUpperCase().slice(0, 28))}</span>
+        ${M.shared.length ? `<p class="sm" style="margin-top:8px">You both felt: <b>${M.shared.map(esc).join(' · ')}</b></p>` : ''}</div>
+      ${SAFETY}<div id="keep"></div><div id="msgs"></div></div>
+    <div class="chat-f"><input id="mi" maxlength="500" placeholder="Message ${esc(M.name)}…" enterkeyhint="send"><button id="ms" aria-label="Send">➤</button></div></div>`;
+  const cb = $('#cb'), msgs = $('#msgs');
+  const drawKeep = () => {
+    $('#keep').innerHTML = M.kept ? `<div class="card c sm" style="border-color:rgba(198,255,0,.5)">💚 Vibe kept! Ye chat expire nahi hogi.</div>`
+      : M.expired ? `<div class="card c sm">⌛ Chat expired. Dono ne Keep vibe nahi dabaya.</div>`
+      : `<div class="card c sm">⏳ Chat expires in <b>${left(M.expires_at)}</b>. Dono "Keep vibe" dabao to keep it.<br>
+         <button class="btn sm ${M.my_keep ? 'ghost' : 'lm'}" id="kv" style="margin-top:10px">${M.my_keep ? '✓ You kept it · tap to undo' : '💚 Keep vibe'}</button>
+         <div class="mut" style="margin-top:6px">${M.their_keep ? `${esc(M.name)} wants to keep it 💚` : `${esc(M.name)} hasn't tapped yet`}</div></div>`;
+    const kv = $('#kv'); if (kv) kv.onclick = async () => { try { const r = await rpc('vm_keep', { p_match: mid, p_on: !M.my_keep }); M.my_keep = !M.my_keep; M.kept = r.kept; if (r.kept) M.expires_at = null; drawKeep(); if (r.kept) toast('Vibe kept forever-ish 💚'); } catch (e) { toast(e.message); } };
+    $('#mi').disabled = $('#ms').disabled = !!M.expired;
+  };
+  const add = list => {
+    if (!list.length) return;
+    const nearBottom = cb.scrollHeight - cb.scrollTop - cb.clientHeight < 120;
+    list.forEach(m => { if (m.id <= last) return; last = m.id; msgs.insertAdjacentHTML('beforeend', `<div class="msg ${m.mine ? 'me' : 'them'}">${esc(m.body)}</div>`); });
+    const l = list[list.length - 1]; const seen = JSON.parse(localStorage.getItem('vm_seen') || '{}'); seen[mid] = l.at; localStorage.setItem('vm_seen', JSON.stringify(seen));
+    if (nearBottom || list.some(m => m.mine)) cb.scrollTop = cb.scrollHeight;
+  };
+  drawKeep(); add(first.messages); cb.scrollTop = cb.scrollHeight;
+  if (!first.messages.length) msgs.innerHTML = `<div class="c sm mut" id="ice" style="margin:10px 0">Icebreaker: "${esc(M.shared[0] ? `${M.shared[0]} pe tumhara reaction kya tha? 😄` : 'Kaunsa moment best laga aaj?')}"</div>`;
+  const send = async () => {
+    const t = $('#mi').value.trim(); if (!t) return;
+    $('#mi').value = ''; $('#ice')?.remove();
+    try { await rpc('vm_send', { p_match: mid, p_body: t }); const r = await rpc('vm_chat', { p_match: mid, p_after: last }); add(r.messages); }
+    catch (e) { toast(e.message); $('#mi').value = t; }
+  };
+  $('#ms').onclick = send; $('#mi').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); send(); } });
+  $('#mo').onclick = () => moreSheet(M.other_id, M.name, mid, () => { location.hash = '#/matches'; });
+  every(3000, async () => {
+    try { const r = await rpc('vm_chat', { p_match: mid, p_after: last }); if (r.messages.length) $('#ice')?.remove(); add(r.messages);
+      const k = r.match; if (k.kept !== M.kept || k.their_keep !== M.their_keep || k.expired !== M.expired) { M = k; drawKeep(); } }
+    catch (e) { toast(e.message); location.hash = '#/matches'; }
+  });
+}
+
+// ---------- profile ----------
+async function profile() {
+  const m = ME;
+  const lbl = { men: 'Men', women: 'Women', everyone: 'Everyone', friends: 'Friends only 🤝' };
+  app.innerHTML = `<div class="wrap">${top()}
+    <div class="card c"><img src="${esc(pub(m.photo_path))}" alt="" style="width:130px;height:160px;border-radius:18px;object-fit:cover;border:2px solid var(--pk)">
+      <h1 style="margin-top:10px">${esc(m.name.split(' ')[0])}, ${m.age}</h1>
+      <div>${m.tags.map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>
+      <div class="sm mut" style="margin-top:8px">Matching with: ${lbl[m.interested_in]}${m.instagram ? ` · IG @${esc(m.instagram)} (only matches see it)` : ''}</div>
+      <a class="btn ghost" href="#/edit">✏️ Edit profile</a></div>
+    <h2>How it works</h2>
+    <div class="card sm">1️⃣ Event venue pe pahucho aur GPS se check in karo.<br>2️⃣ Jo moment feel kiya, "I felt this" dabao (the drop, the six, the encore).<br>3️⃣ Same event ke logon ko swipe karo. Shared moments = higher match.<br>4️⃣ Mutual like = chat. 72 ghante mein expire, unless dono "Keep vibe".</div>
+    ${SAFETY}
+    <div class="card sm mut">Your location is used once to verify check-in and is never shown to anyone. Your profile is visible only to people checked in to the same event.</div>
+    ${m.is_admin ? '<a class="btn line" href="#/admin">🛠️ Admin panel</a>' : ''}
+  </div>${nav('me')}`;
+}
+
+// ---------- admin ----------
+async function admin() {
+  const m = await me();
+  if (!m.is_admin) {
+    app.innerHTML = `<div class="wrap">${top('<a href="#/" class="pill">← App</a>')}<h1>Admin</h1>
+      ${m.admin_exists ? `<div class="card">Admin already claimed by another device. Ask them for access.</div>`
+      : `<div class="card glow"><p>No admin yet. The first device to claim becomes the Vibematcher admin (manage events, moments, reports, bans).</p><button class="btn" id="cl">Claim admin on this device</button></div>`}</div>`;
+    const cl = $('#cl'); if (cl) cl.onclick = async () => { try { const r = await rpc('vm_claim_admin'); if (r.ok) { toast('You are admin now 🛠️'); admin(); } else toast(r.reason); } catch (e) { toast(e.message); } };
+    return;
+  }
+  const [o, reps] = await Promise.all([rpc('vm_admin_overview'), rpc('vm_admin_reports')]);
+  const toLocal = d => { const x = new Date(d); x.setMinutes(x.getMinutes() - x.getTimezoneOffset()); return x.toISOString().slice(0, 16); };
+  const now = new Date(), later = new Date(Date.now() + 5 * 36e5);
+  app.innerHTML = `<div class="wrap">${top('<a href="#/" class="pill">← App</a>')}<h1>Admin 🛠️</h1>
+    <div class="stats" style="margin-top:12px"><div class="stat"><b>${o.users}</b><span>Users</span></div><div class="stat"><b>${o.matches}</b><span>Matches</span></div><div class="stat"><b style="color:${o.open_reports ? 'var(--red)' : '#fff'}">${o.open_reports}</b><span>Reports</span></div></div>
+    <h2>🚩 Reports (${reps.length})</h2>
+    ${reps.length ? reps.map(r => `<div class="card" data-id="${r.id}"><div style="display:flex;gap:12px"><img class="av" src="${esc(pub(r.target.photo_path))}" alt="">
+        <div style="flex:1"><b>${esc(r.target.name)}, ${r.target.age}</b> ${r.target.hidden ? '<span class="pill">HIDDEN</span>' : ''}<div class="sm mut">${r.target.tags.map(esc).join(', ')}${r.target.instagram ? ' · @' + esc(r.target.instagram) : ''} · ${r.target.reports} report(s)</div>
+        <div class="sm" style="margin-top:4px">Reason: <b>${esc(r.reason)}</b> · by ${esc(r.reporter || '?')} · ${ago(r.at)} ago</div></div></div>
+        ${r.messages.length ? `<details><summary>View chat (${r.messages.length})</summary>${r.messages.map(x => `<div class="sm" style="margin-top:4px"><b style="color:${x.from === 'reported' ? 'var(--red)' : 'var(--cy)'}">${x.from}:</b> ${esc(x.body)}</div>`).join('')}</details>` : ''}
+        <button class="btn sm red act" data-a="ban">Ban</button><button class="btn sm ghost act" data-a="dismiss">Dismiss (unhide)</button></div>`).join('') : '<div class="mut sm">No open reports 🎉</div>'}
+    <h2>➕ New event</h2>
+    <div class="card" id="ef">
+      <label>Event name</label><input id="en" placeholder="e.g. LN Universe Night 2">
+      <label>Venue</label><input id="ev" placeholder="Venue name">
+      <div class="row"><div><label>Latitude</label><input id="elat" inputmode="decimal"></div><div><label>Longitude</label><input id="elng" inputmode="decimal"></div></div>
+      <button class="btn sm line" id="here">📍 Use my current location</button>
+      <div class="row"><div><label>Radius (m)</label><input id="er" type="number" value="500"></div><div><label>Join code</label><input id="ec" placeholder="auto" autocapitalize="characters"></div></div>
+      <label>Starts</label><input id="es" type="datetime-local" value="${toLocal(now)}">
+      <label>Ends</label><input id="ee" type="datetime-local" value="${toLocal(later)}">
+      <button class="btn" id="esave">Create event</button></div>
+    <h2>🎪 Events</h2>
+    ${o.events.map(e => `<div class="card" data-id="${e.id}"><div style="display:flex;justify-content:space-between;gap:8px"><h3>${esc(e.name)}</h3>${stateP(e.state)}</div>
+      <div class="sm mut">📍 ${esc(e.venue || '')} (${e.lat.toFixed(4)}, ${e.lng.toFixed(4)}, ${e.radius_m}m)<br>${fmtD(e.starts_at)} → ${fmtD(e.ends_at)} · 👥 ${e.people} · 💜 ${e.matches}</div>
+      <div style="margin-top:6px">Join code: <span class="code">${esc(e.join_code)}</span></div>
+      <div class="row" style="margin-top:6px"><input class="mt" maxlength="80" placeholder="Official moment: 'Rohit's six, over 18'"><button class="btn sm pm" style="flex:none;height:48px;margin-top:6px">Post</button></div>
+      ${e.moments.map(mo => `<div class="sm" style="margin-top:6px;display:flex;gap:8px;align-items:center;${mo.hidden ? 'opacity:.4' : ''}"><span style="flex:1">${mo.official ? '📢' : '👤'} ${esc(mo.title)} · ${mo.felt} felt</span><button class="btn sm ghost hm" data-m="${mo.id}" data-h="${!mo.hidden}" style="margin:0">${mo.hidden ? 'Unhide' : 'Hide'}</button></div>`).join('')}
+      <a class="btn sm ghost" href="#/e/${e.id}">Open</a><button class="btn sm ghost ed">Edit</button><button class="btn sm red del">Delete</button></div>`).join('') || '<div class="mut sm">No events yet</div>'}
+  </div>`;
+  let editing = null;
+  $$('.act').forEach(b => b.onclick = async () => { const id = b.closest('.card').dataset.id; if (b.dataset.a === 'ban' && !confirm('Ban this user?')) return; try { await rpc('vm_admin_resolve', { p_report: id, p_action: b.dataset.a }); toast('Done ✅'); admin(); } catch (e) { toast(e.message); } });
+  $('#here').onclick = async () => { try { const c = await getPos(); $('#elat').value = c.latitude.toFixed(6); $('#elng').value = c.longitude.toFixed(6); toast(`Got it (±${Math.round(c.accuracy)}m)`); } catch (e) { toast(e.message); } };
+  $('#esave').onclick = async () => {
+    const lat = parseFloat($('#elat').value), lng = parseFloat($('#elng').value);
+    if (!$('#en').value.trim() || isNaN(lat) || isNaN(lng)) return toast('Name + lat/lng required');
+    try { await rpc('vm_admin_save_event', { p_id: editing, p_name: $('#en').value, p_venue: $('#ev').value, p_lat: lat, p_lng: lng, p_radius: parseInt($('#er').value, 10) || 500, p_starts: new Date($('#es').value).toISOString(), p_ends: new Date($('#ee').value).toISOString(), p_code: $('#ec').value }); toast(editing ? 'Event updated ✅' : 'Event created 🎉'); admin(); } catch (e) { toast(e.message); }
+  };
+  $$('.pm').forEach(b => b.onclick = async () => { const c = b.closest('.card'); const t = c.querySelector('.mt').value.trim(); if (t.length < 3) return toast('Moment too short'); try { await rpc('vm_admin_post_moment', { p_event: c.dataset.id, p_title: t }); toast('Moment posted 📢'); admin(); } catch (e) { toast(e.message); } });
+  $$('.hm').forEach(b => b.onclick = async () => { try { await rpc('vm_admin_hide_moment', { p_moment: b.dataset.m, p_hidden: b.dataset.h === 'true' }); admin(); } catch (e) { toast(e.message); } });
+  $$('.del').forEach(b => b.onclick = async () => { if (!confirm('Delete event + all its matches & chats?')) return; try { await rpc('vm_admin_delete_event', { p_id: b.closest('.card').dataset.id }); toast('Deleted'); admin(); } catch (e) { toast(e.message); } });
+  $$('.ed').forEach(b => b.onclick = () => {
+    const e = o.events.find(x => x.id === b.closest('.card').dataset.id); editing = e.id;
+    $('#en').value = e.name; $('#ev').value = e.venue || ''; $('#elat').value = e.lat; $('#elng').value = e.lng; $('#er').value = e.radius_m; $('#ec').value = e.join_code;
+    $('#es').value = toLocal(e.starts_at); $('#ee').value = toLocal(e.ends_at); $('#esave').textContent = 'Save changes';
+    $('#ef').scrollIntoView({ behavior: 'smooth' });
+  });
+}
+
+render();
+</script>
+</body>
+</html>
