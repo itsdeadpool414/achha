@@ -27,6 +27,7 @@ h1{font-family:'Bebas Neue';font-size:44px;letter-spacing:2px;line-height:1}
 h2{font-family:'Bebas Neue';font-size:28px;letter-spacing:2px;margin:24px 0 10px}
 .mut{color:var(--t2)}
 .sm{font-size:12px}
+.tiers{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.tier{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:14px 12px;display:flex;flex-direction:column}.tier h2{font-size:17px;margin:8px 0 2px}.tier .price{font:700 24px 'Space Mono';margin:4px 0 8px}.tier ul{list-style:none;padding:0;margin:0 0 6px;font-size:12.5px;color:var(--t2);flex:1}.tier li{margin:4px 0}.tier li:before{content:'✓ ';color:var(--g)}.tier.pop{border-color:var(--g);box-shadow:0 0 30px rgba(0,255,135,.18)}.tier.vip{border-color:var(--gold)}.tier.vip .price{color:var(--gold)}.tier .btn{height:44px;font-size:13px}
 .card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:16px;margin:12px 0}
 .card.glow{border-color:var(--v);box-shadow:0 0 40px rgba(123,47,255,.25)}
 .btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:52px;border-radius:12px;border:0;font:700 15px 'DM Sans';letter-spacing:.5px;background:var(--v);color:#fff;cursor:pointer;margin-top:10px}
@@ -407,14 +408,24 @@ async function movie(slug) {
   if (!ev) { location.hash = '#/'; return; }
   const unlocked = m.unlocks.includes(slug) || m.is_admin;
   if (!unlocked) {
+    const vs = await rpc('vh_vip_status', { p_slug: slug }).catch(() => ({}));
     app.innerHTML = `<div class="wrap"><div class="top"><a href="#/" class="logo">⚡ VIBEHAI</a><span class="pill gold">⏱ ${m.minutes} MIN</span></div>
       <div class="card glow center" style="padding:28px 16px"><div class="big">🎬</div><h1>${esc(ev.name)}</h1><p class="mut">Official aftermovie · ${ev.reel_count} fan reels</p>
       <p class="sm" style="margin-top:10px">100% fan-filmed · location-verified · auto-edited</p></div>
-      <button class="btn" id="ul" ${m.minutes < 18 ? 'disabled' : ''}>⏱ Unlock with 18 Vibe Minutes</button>
-      ${m.minutes < 18 ? `<p class="mut sm center" style="margin-top:6px">You have ${m.minutes}. Watch ${18 - m.minutes} more minutes of reels to unlock free.</p><a class="btn line" href="#/feed">▶ Watch reels &amp; earn minutes</a>` : ''}
-      <button class="btn ghost" disabled>Pay ₹18 · coming soon</button>
+      <div class="tiers">
+        <div class="tier pop"><span class="pill g">⭐ Most popular</span><h2>Aftermovie</h2><div class="price">₹18 <span class="mut sm">or 18 Vibe Minutes</span></div>
+          <ul><li>Full fan-filmed aftermovie</li><li>Best reels, auto-edited</li><li>Watch anytime</li></ul>
+          <button class="btn" id="ul" ${m.minutes < 18 ? 'disabled' : ''}>⏱ Unlock with 18 min</button>
+          ${m.minutes < 18 ? `<p class="mut sm center" style="margin-top:6px">You have ${m.minutes}. Watch ${18 - m.minutes} more min to unlock free.</p><a class="btn line" href="#/feed">▶ Earn minutes</a>` : ''}
+          <button class="btn ghost" disabled>Pay ₹18 · soon</button></div>
+        <div class="tier vip"><span class="pill gold">👑 VIP</span><h2>Director's Cut</h2><div class="price">₹499</div>
+          <ul><li>Full-length, 4K</li><li>Your clips featured first</li><li>Your name in the credits</li><li>Download raw clips</li></ul>
+          <button class="btn line" id="vip" ${vs.requested ? 'disabled' : ''}>${vs.requested ? '✓ On the VIP list' : 'Request VIP · soon'}</button></div>
+      </div>
+      <p class="mut sm center" style="margin-top:8px">₹18 gets you the full aftermovie. That's 27× less than VIP.</p>
     </div>${nav('')}`;
     const ul = $('#ul'); if (ul) ul.onclick = async () => { const r = await rpc('vh_unlock', { p_slug: slug }); if (r.ok) movie(slug); else toast(r.reason); };
+    const vb = $('#vip'); if (vb) vb.onclick = async () => { const r = await rpc('vh_vip_request', { p_slug: slug }); if (r.ok) { toast("You're on the VIP list. We'll show it here when Director's Cut opens."); vb.disabled = true; vb.textContent = '✓ On the VIP list'; } else toast(r.reason); };
     return;
   }
   const items = await rpc('vh_feed', { p_slug: slug }, false);
