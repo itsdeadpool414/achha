@@ -257,8 +257,11 @@ async function onboard(first) {
     if (!st.interested) return toast('Kiske saath match karna hai?');
     if (!st.photo) return toast('Ek photo add karo');
     if (st.tags.length !== 3) return toast('Exactly 3 vibe tags chuno');
-    if (first && !$('#c18').checked) return toast('Please confirm you are 18+');
-    if (first && !$('#ctp').checked) return toast('Please agree to the Terms & Privacy Policy');
+    const need = (id, msg) => { const l = $('#' + id).closest('label'); l.style.outline = '2px solid var(--red)'; l.style.borderRadius = '10px'; l.style.padding = '6px';
+      let e = l.nextElementSibling; if (!e || !e.classList.contains('cerr')) { e = document.createElement('div'); e.className = 'cerr sm'; e.style.color = 'var(--red)'; l.after(e); }
+      e.textContent = msg; l.scrollIntoView({ behavior: 'smooth', block: 'center' }); $('#' + id).onchange = () => { l.style.outline = ''; e.remove(); }; toast(msg); };
+    if (first && !$('#c18').checked) return need('c18', 'Please confirm you are 18 or older');
+    if (first && !$('#ctp').checked) return need('ctp', 'Please agree to the Terms, Privacy Policy and Community Guidelines to continue');
     const b = $('#go'); b.disabled = true;
     try {
       if (first) await rpc('vm_accept_terms', { p_version: TERMS_V });
