@@ -426,12 +426,13 @@ async function movie(slug) {
   await ready;
   const [ev, m] = await Promise.all([rpc('vh_event', { p_slug: slug }, false), me()]);
   if (!ev) { location.hash = '#/'; return; }
-  const unlocked = m.unlocks.includes(slug) || m.is_admin;
+  const am = await rpc('vh_aftermovie', { p_slug: slug }).catch(() => ({}));
+  const unlocked = m.unlocks.includes(slug) || m.is_admin || !!am.path;
   if (!unlocked) {
     const vs = await rpc('vh_vip_status', { p_slug: slug }).catch(() => ({}));
     app.innerHTML = `<div class="wrap"><div class="top"><a href="#/" class="logo">⚡ VIBEHAI</a><span class="pill gold">⏱ ${m.minutes} MIN</span></div>
       <div class="card glow center" style="padding:28px 16px"><div class="big">🎬</div><h1>${esc(ev.name)}</h1><p class="mut">Official aftermovie · ${ev.reel_count} fan reels</p>
-      <p class="sm" style="margin-top:10px">100% fan-filmed · location-verified · auto-edited</p></div>
+      <p class="sm" style="margin-top:10px">100% fan-filmed · location-verified · auto-edited</p>${am.ready ? '<p style="margin-top:8px"><span class="pill g">✅ Final cut ready · 9:16 HD</span></p>' : ''}</div>
       <div class="tiers">
         <div class="tier pop"><span class="pill g">⭐ Most popular</span><h2>Aftermovie</h2><div class="price">₹18 <span class="mut sm">or 18 Vibe Minutes</span></div>
           <ul><li>Full fan-filmed aftermovie</li><li>Best reels, auto-edited</li><li>Watch anytime</li></ul>
@@ -446,6 +447,13 @@ async function movie(slug) {
     </div>${nav('')}`;
     const ul = $('#ul'); if (ul) ul.onclick = async () => { const r = await rpc('vh_unlock', { p_slug: slug }); if (r.ok) movie(slug); else toast(r.reason); };
     const vb = $('#vip'); if (vb) vb.onclick = async () => { const r = await rpc('vh_vip_request', { p_slug: slug }); if (r.ok) { toast("You're on the VIP list. We'll show it here when Director's Cut opens."); vb.disabled = true; vb.textContent = '✓ On the VIP list'; } else toast(r.reason); };
+    return;
+  }
+  if (am.path) {
+    const src = pub(am.path) + (am.at ? '?v=' + new Date(am.at).getTime() : '');
+    app.innerHTML = `<div class="movie"><video id="mv" src="${src}" playsinline controls autoplay style="width:100%;height:100%;object-fit:contain;background:#000"></video>
+      <a href="#/" class="pill" style="position:absolute;top:calc(14px + env(safe-area-inset-top));right:14px;background:rgba(0,0,0,.6);z-index:3">✕ CLOSE</a>
+      <a href="${src}" download class="pill gold" style="position:absolute;top:calc(14px + env(safe-area-inset-top));left:14px;background:rgba(0,0,0,.6);z-index:3">⬇ SAVE</a></div>`;
     return;
   }
   const items = await rpc('vh_feed', { p_slug: slug }, false);
