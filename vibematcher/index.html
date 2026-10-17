@@ -357,7 +357,7 @@ function moreSheet(target, name, matchId, after) {
 async function deck(eid) {
   const [ev, cards] = await Promise.all([rpc('vm_event_home', { p_event: eid }), rpc('vm_deck', { p_event: eid })]);
   let stack = cards.slice();
-  app.innerHTML = `<div class="wrap" style="padding-bottom:calc(90px + env(safe-area-inset-bottom))">${top(`<a href="#/e/${eid}" class="pill">← ${esc(ev.name.slice(0, 18))}</a>`)}
+  app.innerHTML = `<div class="wrap" style="padding-bottom:calc(90px + env(safe-area-inset-bottom))">${top(`<a href="#/e/${eid}" class="pill" style="max-width:52vw;overflow:hidden;text-overflow:ellipsis;display:inline-block">← ${esc(ev.name)}</a>`)}
     <div class="deck" id="dk"></div>
     <div class="actions" id="acts"><button class="no" id="bn" aria-label="Pass">✕</button><button class="yes" id="by" aria-label="Like">💜</button></div>
     <div class="sm mut c" style="margin-top:10px">Exact location ya distance kabhi nahi dikhaya jata.</div></div>${nav('events')}`;
