@@ -114,6 +114,7 @@ details summary::-webkit-details-marker{display:none}
 .spin{display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .8s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
 .loader{display:flex;justify-content:center;padding:60px}
+.legal a{color:var(--t2);text-decoration:underline}
 </style>
 </head>
 <body>
@@ -124,6 +125,9 @@ const SB_URL = 'https://npprahzhjjujhyxznmbq.supabase.co';
 const SB_KEY = 'sb_publishable_i6vk6IQByH16Pj1YlSE9aA_5UrkK0NK';
 const sb = createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
 const BUCKET = 'vm-media';
+const TERMS_V = '2026-10-17';   // bump when Terms/Privacy change materially -> users re-accept
+const L = 'legal/';             // legal pages live at vibematcher/legal/
+const LEGAL_LINKS = `<a href="${L}terms.html" target="_blank" rel="noopener">Terms</a> · <a href="${L}privacy.html" target="_blank" rel="noopener">Privacy</a> · <a href="${L}community-guidelines.html" target="_blank" rel="noopener">Guidelines</a> · <a href="${L}child-safety.html" target="_blank" rel="noopener">Child safety</a> · <a href="${L}grievance.html" target="_blank" rel="noopener">Grievance</a>`;
 const TAGS = ['EDM','Bollywood','Cricket','Indie','Garba','Hip-Hop','Desi Hip-Hop','Punjabi','Techno','Rock','Sufi','K-Pop','Football','Stand-up','Retro','Metal'];
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
@@ -169,6 +173,7 @@ async function render() {
     const m = await me();
     if (m.banned) return banned();
     if (!m.onboarded || parts[0] === 'edit') return await onboard(!m.onboarded);
+    if (m.terms_version !== TERMS_V) return consentGate();
     switch (parts[0]) {
       case 'e': return await eventHome(parts[1]);
       case 'deck': return await deck(parts[1]);
@@ -186,7 +191,8 @@ function underage() {
   app.innerHTML = `<div class="wrap">${top()}<div class="empty"><div class="e">🔞</div><h1>18+ only</h1><p class="mut" style="margin-top:10px">Vibematcher sirf 18 saal se upar walon ke liye hai. Fest enjoy karo, doston ke saath! 🎉</p></div></div>`;
 }
 function banned() {
-  app.innerHTML = `<div class="wrap">${top()}<div class="empty"><div class="e">⛔</div><h1>Account restricted</h1><p class="mut" style="margin-top:10px">This device was banned after a safety review.</p></div></div>`;
+  app.innerHTML = `<div class="wrap">${top()}<div class="empty"><div class="e">⛔</div><h1>Account restricted</h1><p class="mut" style="margin-top:10px">This device was banned after a safety review.</p><p class="sm mut" style="margin-top:14px">Appeal or questions: <a href="${L}grievance.html" style="color:var(--pk)">Grievance Officer</a>. You can still <button class="btn sm ghost" id="delb" style="display:inline-block;width:auto;padding:6px 12px">delete your data</button></p></div></div>`;
+  const db = $('#delb'); if (db) db.onclick = () => deleteSheet();
 }
 
 // ---------- onboarding / edit profile ----------
@@ -219,7 +225,8 @@ async function onboard(first) {
       <label>Pick 3 vibe tags <span id="tc">(${st.tags.length}/3)</span></label>
       <div class="chips" id="tags">${TAGS.map(t => `<div class="chip ${st.tags.includes(t) ? 'on' : ''}" data-v="${esc(t)}">${esc(t)}</div>`).join('')}</div>
       <label>Instagram (optional, sirf mutual match ko dikhega)</label><input id="ig" autocapitalize="off" autocorrect="off" value="${esc(m.instagram || '')}" placeholder="@yourhandle">
-      ${first ? `<label style="display:flex;gap:10px;align-items:center;color:#fff"><input type="checkbox" id="c18" style="width:22px;height:22px;margin:0;flex:none;-webkit-appearance:checkbox;appearance:auto"> I confirm I'm 18 or older and will follow the safety rules.</label>` : ''}
+      ${first ? `${NOTICE}<label style="display:flex;gap:10px;align-items:center;color:#fff"><input type="checkbox" id="c18" style="width:22px;height:22px;margin:0;flex:none;-webkit-appearance:checkbox;appearance:auto"> I confirm I'm 18 or older.</label>
+      <label style="display:flex;gap:10px;align-items:center;color:#fff"><input type="checkbox" id="ctp" style="width:22px;height:22px;margin:0;flex:none;-webkit-appearance:checkbox;appearance:auto"> <span>I agree to the <a href="${L}terms.html" target="_blank" rel="noopener" style="color:var(--pk)">Terms</a>, <a href="${L}privacy.html" target="_blank" rel="noopener" style="color:var(--pk)">Privacy Policy</a> and <a href="${L}community-guidelines.html" target="_blank" rel="noopener" style="color:var(--pk)">Community Guidelines</a>.</span></label>` : ''}
       <button class="btn" id="go">${first ? "Let's vibe ⚡" : 'Save'}</button>
     </div>${SAFETY}</div>`;
   const one = (id, key) => $$(`#${id} .chip`).forEach(c => c.onclick = () => { $$(`#${id} .chip`).forEach(x => x.classList.remove('on')); c.classList.add('on'); st[key] = c.dataset.v; });
@@ -250,9 +257,11 @@ async function onboard(first) {
     if (!st.interested) return toast('Kiske saath match karna hai?');
     if (!st.photo) return toast('Ek photo add karo');
     if (st.tags.length !== 3) return toast('Exactly 3 vibe tags chuno');
-    if (first && !$('#c18').checked) return toast('Please confirm 18+ and safety rules');
+    if (first && !$('#c18').checked) return toast('Please confirm you are 18+');
+    if (first && !$('#ctp').checked) return toast('Please agree to the Terms & Privacy Policy');
     const b = $('#go'); b.disabled = true;
     try {
+      if (first) await rpc('vm_accept_terms', { p_version: TERMS_V });
       await rpc('vm_save_profile', { p_name: $('#nm').value.trim(), p_age: age, p_gender: st.gender, p_interested: st.interested, p_photo: st.photo, p_tags: st.tags, p_instagram: $('#ig').value.trim().replace(/^@/, '') });
       toast(first ? 'Profile ready! Ab event join karo 🎪' : 'Saved ✅'); const to = first ? '#/' : '#/me'; if (location.hash === to || (!location.hash && first)) render(); else location.hash = to;
     } catch (er) { toast(er.message); b.disabled = false; }
@@ -266,12 +275,15 @@ async function events() {
   app.innerHTML = `<div class="wrap">${top(`<a href="#/me"><img class="av" style="width:38px;height:38px" src="${esc(pub(ME.photo_path))}" alt=""></a>`)}
     <h1>Kaunse event<br>pe ho? <span class="neon">🎪</span></h1>
     <p class="mut" style="margin-top:8px">Venue pe pahucho, check in karo, moments feel karo, aur same-vibe wale log se match.</p>
+    ${Date.now() - (+localStorage.getItem('vm_qn') || 0) > 90 * 864e5 ? `<div class="card sm" id="qn"><b>📜 Quick reminder</b><div class="mut" style="margin-top:4px">Breaking our <a href="${L}terms.html" style="color:var(--pk)">Terms</a> or <a href="${L}community-guidelines.html" style="color:var(--pk)">Guidelines</a> can get your content removed and your access suspended or ended immediately. Unlawful content may be reported to the police. Complaints: <a href="${L}grievance.html" style="color:var(--pk)">Grievance Officer</a>.</div><button class="btn sm ghost" id="qnok" style="margin-top:8px">Got it</button></div>` : ''}
     ${list.length ? list.map(e => `<a class="card ev ${e.state === 'live' ? 'glow' : ''}" href="#/e/${e.id}">
       <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><h3>${esc(e.name)}</h3>${stateP(e.state)}</div>
       <div class="mut sm">📍 ${esc(e.venue || 'Venue')} · ${fmtD(e.starts_at)} → ${fmtD(e.ends_at)}</div>
       <div class="meta">${e.checked_in ? '<span class="pill pk">✓ CHECKED IN</span>' : ''}<span class="pill">👥 ${e.people} here</span></div></a>`).join('')
     : `<div class="empty"><div class="e">🌙</div><p class="mut">Abhi koi event live nahi hai. Organiser jaldi add karega.</p></div>`}
+    <div class="legal sm mut c" style="margin-top:22px">${LEGAL_LINKS}</div>
   </div>${nav('events')}`;
+  const qn = $('#qnok'); if (qn) qn.onclick = () => { localStorage.setItem('vm_qn', String(Date.now())); $('#qn').remove(); };
   badge();
 }
 
@@ -308,6 +320,7 @@ async function eventHome(id) {
     const ci = $('#ci');
     if (ci) ci.onclick = async () => {
       ci.disabled = true; ci.innerHTML = '<span class="spin"></span> Checking location…';
+      if (!localStorage.getItem('vm_locok') && !(await locDisclosure())) { ci.disabled = false; ci.textContent = "📍 I'm here, check me in"; return; }
       try { const c = await getPos(); const r = await rpc('vm_checkin', { p_event: id, p_lat: c.latitude, p_lng: c.longitude, p_accuracy: c.accuracy, p_code: '' });
         if (r.ok) { toast("You're in! 🎉"); reload(); } else { toast(r.reason, 4000); ci.disabled = false; ci.textContent = "📍 I'm here, check me in"; }
       } catch (e) { toast(e.message, 4500); ci.disabled = false; ci.textContent = "📍 I'm here, check me in"; }
@@ -341,7 +354,7 @@ function moreSheet(target, name, matchId, after) {
   sh.querySelector('#rp').onclick = () => {
     const box = sh.querySelector('.sheet');
     box.innerHTML = `<h3>Report ${esc(name)}</h3><p class="mut sm">Report karte hi ye profile hide ho jayegi until our team reviews it. Tum unhe block bhi kar doge.</p>
-      <div class="chips" id="rr">${['Fake profile','Underage','Harassment / creepy','Nudity / explicit','Spam / scam','Something else'].map(r => `<div class="chip" data-v="${r}">${r}</div>`).join('')}</div>
+      <div class="chips" id="rr">${['Fake profile','Underage / child safety','Harassment / creepy','Nudity / explicit','Spam / scam','Something else'].map(r => `<div class="chip" data-v="${r}">${r}</div>`).join('')}</div>
       <textarea id="rt" rows="2" maxlength="250" placeholder="Details (optional)"></textarea>
       <button class="btn red" id="rs">Submit report</button><button class="btn ghost" id="cx2">Cancel</button>`;
     let reason = '';
@@ -497,7 +510,65 @@ async function profile() {
     ${SAFETY}
     <div class="card sm mut">Your location is used once to verify check-in and is never shown to anyone. Your profile is visible only to people checked in to the same event.</div>
     ${m.is_admin ? '<a class="btn line" href="#/admin">🛠️ Admin panel</a>' : ''}
+    <h2>Legal &amp; privacy</h2>
+    <div class="card sm legal">${LEGAL_LINKS}<div class="mut" style="margin-top:8px">Your Vibematcher ID: <b style="font-family:'Space Mono',monospace">${esc(m.short_id || '')}</b> (quote it in any privacy or grievance request)</div></div>
+    <button class="btn red" id="dela">🗑️ Delete my account &amp; data</button>
   </div>${nav('me')}`;
+  $('#dela').onclick = () => deleteSheet();
+}
+
+// ---------- consent, location disclosure, deletion ----------
+const NOTICE = `<details class="card sm" style="margin-top:12px"><summary style="cursor:pointer;color:#fff"><b>What we collect &amp; why</b> (tap)</summary>
+  <div class="mut" style="margin-top:8px">• First name, age, gender, who you want to match with, 1 photo, 3 vibe tags, optional Instagram handle: to show your profile to people at the same event and match you.<br>
+  • Precise location, once, when you tap check-in: compared with the venue on our server and <b>not stored</b>. Or use a join code instead.<br>
+  • Moments you post, "I felt this" taps, likes/passes, matches and chat messages: to run matching and chat (chats expire 72 h after the event unless both keep).<br>
+  • A random device ID + secret saved on this phone (no email, no phone number): to recognise your device.<br>
+  • Blocks and reports: to keep people safe.<br>
+  Withdraw consent any time by deleting your account (Profile → Delete). Questions or complaints: <a href="${L}grievance.html" target="_blank" rel="noopener" style="color:var(--pk)">Grievance Officer</a>. You can also complain to the Data Protection Board of India. Full details: <a href="${L}privacy.html" target="_blank" rel="noopener" style="color:var(--pk)">Privacy Policy</a>.</div></details>`;
+
+function consentGate() {
+  app.innerHTML = `<div class="wrap">${top()}<h1>Updated terms</h1>
+    <p class="mut" style="margin:10px 0">Please review and accept our Terms and Privacy Policy to keep using Vibematcher.</p>${NOTICE}
+    <div class="card"><label style="display:flex;gap:10px;align-items:center;color:#fff"><input type="checkbox" id="ctp" style="width:22px;height:22px;margin:0;flex:none;-webkit-appearance:checkbox;appearance:auto"> <span>I am 18+ and agree to the <a href="${L}terms.html" target="_blank" rel="noopener" style="color:var(--pk)">Terms</a>, <a href="${L}privacy.html" target="_blank" rel="noopener" style="color:var(--pk)">Privacy Policy</a> and <a href="${L}community-guidelines.html" target="_blank" rel="noopener" style="color:var(--pk)">Community Guidelines</a>.</span></label>
+    <button class="btn" id="acc">Accept &amp; continue</button><button class="btn ghost" id="dno">I don't agree: delete my data</button></div></div>`;
+  $('#acc').onclick = async () => { if (!$('#ctp').checked) return toast('Tick the box to continue'); try { await rpc('vm_accept_terms', { p_version: TERMS_V }); render(); } catch (e) { toast(e.message); } };
+  $('#dno').onclick = () => deleteSheet();
+}
+
+function locDisclosure() {
+  return new Promise(res => {
+    const w = document.createElement('div');
+    w.innerHTML = `<div class="modal"><div class="box"><h2>📍 Location for check-in</h2>
+      <p class="mut" style="margin:10px 0">Vibematcher uses your <b>precise location once, when you tap check-in</b>, to confirm you are inside the venue. It is compared with the venue on our server and is <b>not stored or shown to anyone</b>. We never track you in the background.</p>
+      <p class="sm mut">Prefer not to? Use the event's join code instead.</p>
+      <button class="btn" id="lok">Continue</button><button class="btn ghost" id="lno">Not now</button></div></div>`;
+    document.body.appendChild(w);
+    w.querySelector('#lok').onclick = () => { localStorage.setItem('vm_locok', '1'); w.remove(); res(true); };
+    w.querySelector('#lno').onclick = () => { w.remove(); res(false); };
+  });
+}
+
+function deleteSheet() {
+  const sh = document.createElement('div');
+  sh.innerHTML = `<div class="modal" style="z-index:65"></div><div class="sheet"><h3>Delete account &amp; data?</h3>
+    <p class="sm mut" style="margin:8px 0">This permanently deletes your profile, photo, vibe tags, check-ins, "I felt this" taps, moments you posted, likes, matches and all chats (for both sides). It cannot be undone.</p>
+    <p class="sm mut">We keep a minimal record (device ID, first name, age, Instagram handle, events checked in to, counts; no photo, no messages) for 1 year, and reports involving you with up to 15 messages of evidence for 180 days, for safety and legal compliance. Your photo file is erased from storage within 7 days. <a href="${L}delete-account.html" target="_blank" rel="noopener" style="color:var(--pk)">Details</a></p>
+    <label>Type DELETE to confirm</label><input id="dcf" autocapitalize="characters" autocomplete="off" placeholder="DELETE">
+    <button class="btn red" id="dgo">Delete everything</button><button class="btn ghost" id="dcx">Cancel</button></div>`;
+  document.body.appendChild(sh);
+  const close = () => sh.remove();
+  sh.querySelector('.modal').onclick = close; sh.querySelector('#dcx').onclick = close;
+  sh.querySelector('#dgo').onclick = async () => {
+    const v = sh.querySelector('#dcf').value.trim().toUpperCase();
+    if (v !== 'DELETE') return toast('Type DELETE to confirm');
+    const b = sh.querySelector('#dgo'); b.disabled = true; b.innerHTML = '<span class="spin"></span> Deleting…';
+    try {
+      await rpc('vm_delete_account', { p_confirm: 'DELETE' });
+      ['vm_dev', 'vm_seen', 'vm_locok'].forEach(k => localStorage.removeItem(k));
+      close();
+      app.innerHTML = `<div class="wrap">${top()}<div class="empty"><div class="e">👋</div><h1>Deleted</h1><p class="mut" style="margin-top:10px">Your Vibematcher account and data have been deleted from this device and our servers. Your photo file is erased within 7 days.</p><a class="btn ghost" href="./" onclick="setTimeout(()=>location.reload(),50)">Start fresh</a></div></div>`;
+    } catch (e) { toast(e.message, 4500); b.disabled = false; b.textContent = 'Delete everything'; }
+  };
 }
 
 // ---------- admin ----------
