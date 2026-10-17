@@ -215,6 +215,7 @@ async function eventEntry(slug, code) {
       <p class="mut" style="margin-top:6px">${esc(ev.venue || '')} · ${fmtD(ev.starts_at)}</p>
     </div>
     <div id="anns"></div>
+    <div id="vipx"></div>
     <div id="vbox">${already ? `<div class="card"><div class="step ok">✅ You're verified at this event</div></div><a class="btn" href="#/post/${slug}">🎬 Post your reel →</a>` : `
       <div class="card">
         <b>Prove you're here</b>
@@ -230,6 +231,22 @@ async function eventEntry(slug, code) {
   </div>${nav('')}`;
   const loadAnn = async () => { try { const l = await rpc('vh_announcements', { p_slug: slug }, false); const el = $('#anns'); if (el) el.innerHTML = l.length ? `<div class="card"><b>📢 Live updates</b>${annHtml(l.slice(0, 5))}</div>` : ''; } catch (e) {} };
   loadAnn(); const annT = setInterval(loadAnn, 30000); onLeave(() => clearInterval(annT));
+  (async () => {
+    try {
+      const v = await rpc('vh_event_vip', { p_slug: slug }, false); if (!v) return;
+      const vs = await rpc('vh_vip_status', { p_slug: slug, p_kind: 'pass' }).catch(() => ({}));
+      const full = v.limited && v.capacity && v.requests >= v.capacity && !vs.requested;
+      const badge = v.invite_only ? '🔒 Invite-only' : v.limited ? '⏳ Limited' : '👑 Premium';
+      $('#vipx').innerHTML = `<div class="tiers">
+        <div class="tier pop"><span class="pill g">⭐ Most fans</span><h2>Regular entry</h2><div class="price">Free</div>
+          <ul><li>Scan the venue QR</li><li>Post reels, get picked &amp; paid</li><li>Aftermovie for ₹18 or 18 Vibe Minutes</li></ul></div>
+        <div class="tier vip"><span class="pill gold">${badge}</span><h2>👑 VIP · ${esc(v.zone)}</h2><div class="price">${inr(v.price)}</div>
+          <ul>${vipPerks(v).map(x => `<li>${x}</li>`).join('') || '<li>VIP zone access</li>'}${v.limited && v.capacity ? `<li>Only ${v.capacity} spots</li>` : ''}</ul>
+          <button class="btn line" id="vreq" ${vs.requested || full ? 'disabled' : ''}>${vs.requested ? '✓ Requested' : full ? 'VIP full' : v.invite_only ? 'Request an invite' : 'Request VIP · soon'}</button></div></div>
+        <p class="mut sm center" style="margin-top:6px">VIP isn't sold in the app yet. Requests go to the organiser.</p>`;
+      const b = $('#vreq'); if (b) b.onclick = async () => { const r = await rpc('vh_vip_request', { p_slug: slug, p_kind: 'pass' }); if (r.ok) { b.disabled = true; b.textContent = '✓ Requested'; toast('VIP request sent to the organiser 👑'); } else toast(r.reason); };
+    } catch (e) {}
+  })();
   const go = $('#go'); if (!go) return;
   go.onclick = async () => {
     if (!$('#agree').checked) return toast('Tick the box to continue');
@@ -263,6 +280,7 @@ async function post(slug) {
   }
   if (!open.some(c => c.slug === slug)) { location.hash = '#/post'; return; }
   const ev = open.find(c => c.slug === slug);
+  const evVip = await rpc('vh_event_vip', { p_slug: slug }, false).catch(() => null);
   app.innerHTML = `<div class="wrap"><div class="top"><a href="#/" class="logo">⚡ VIBEHAI</a><span class="pill g">✅ VERIFIED</span></div>
     <h1>Post from<br>${esc(ev.name)}</h1>
     <div class="row" style="margin-top:14px">
@@ -282,6 +300,7 @@ async function post(slug) {
     $('#prev').innerHTML = `<div class="card"><video src="${URL.createObjectURL(f)}" playsinline controls loop style="width:100%;max-height:60vh;border-radius:12px;background:#000"></video>
       <label>Caption</label><textarea id="cap" maxlength="200" rows="2" placeholder="Describe this moment…"></textarea>
       <label class="check"><input type="checkbox" id="real"> <span>This is real footage I filmed at this event. No AI edits.</span></label>
+      ${evVip ? `<label class="check"><input type="checkbox" id="vipz"> <span>👑 Filmed in the VIP zone (${esc(evVip.zone)}). The organiser checks this.</span></label>` : ''}
       <button class="btn" id="send">Submit for review →</button><div id="pg"></div></div>`;
     $('#send').onclick = submit;
   };
@@ -304,7 +323,8 @@ async function post(slug) {
       const { error } = await sb.storage.from(BUCKET).upload(path, file, { contentType: file.type || 'video/mp4', upsert: false });
       if (error) throw error;
       $('#pg').innerHTML = '<div class="prog"><i style="width:85%"></i></div>';
-      await rpc('vh_submit_reel', { p_slug: slug, p_path: path, p_caption: $('#cap').value, p_source: source, p_real: true, p_lat: c.latitude, p_lng: c.longitude, p_accuracy: c.accuracy });
+      const sr = await rpc('vh_submit_reel', { p_slug: slug, p_path: path, p_caption: $('#cap').value, p_source: source, p_real: true, p_lat: c.latitude, p_lng: c.longitude, p_accuracy: c.accuracy });
+      if ($('#vipz')?.checked && sr?.id) await rpc('vh_tag_reel_vip', { p_reel: sr.id, p_on: true }).catch(() => {});
       app.querySelector('.wrap').innerHTML = `<div class="top"><a href="#/" class="logo">⚡ VIBEHAI</a></div>
         <div class="card glow center" style="padding:30px 16px"><div class="big">⏳</div><h2 style="margin-top:6px">Under review</h2>
         <div class="step ok" style="justify-content:center">✅ Location verified at the venue</div>
@@ -430,7 +450,8 @@ async function movie(slug) {
   }
   const items = await rpc('vh_feed', { p_slug: slug }, false);
   if (!items.length) { app.innerHTML = `<div class="wrap"><div class="top"><a href="#/" class="logo">⚡ VIBEHAI</a></div><div class="card">No approved reels yet for this event.</div></div>${nav('')}`; return; }
-  const list = [...items].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+  const vipIds = new Set(await rpc('vh_vip_reel_ids', { p_ids: items.map(r => r.id) }, false).catch(() => []));
+  const list = [...items].sort((a, b) => (vipIds.has(b.id) - vipIds.has(a.id)) || (new Date(a.created_at) - new Date(b.created_at)));
   app.innerHTML = `<div class="movie"><video id="mv" playsinline></video><div class="title" id="tt"><div class="logo" style="font-size:20px">⚡ VIBEHAI PRESENTS</div><h1 style="margin-top:10px">${esc(ev.name)}</h1><p class="mut">${esc(ev.venue || '')}</p><p class="sm" style="margin-top:14px">Filmed by ${new Set(list.map(r => r.creator)).size} fans who were really there</p><button class="btn" id="play" style="max-width:260px">▶ Play aftermovie</button></div>
     <a href="#/" class="pill" style="position:absolute;top:calc(14px + env(safe-area-inset-top));right:14px;background:rgba(0,0,0,.6);z-index:3">✕ CLOSE</a>
     <div id="cr" style="position:absolute;left:14px;bottom:calc(24px + env(safe-area-inset-bottom));z-index:2" class="pill"></div></div>`;
@@ -530,7 +551,7 @@ async function admin(tab) {
   body.innerHTML = (tab === 'review' ? '<h2>Waiting for review</h2>' : '<h2>Picked reels</h2><p class="mut sm">Repost each on Instagram with the caption, then pay the fan and mark it paid.</p>') +
     (list.map(r => `<div class="card" data-id="${r.id}">
       <video src="${pub(r.video_path)}" controls playsinline preload="metadata" style="width:100%;max-height:60vh;border-radius:12px;background:#000"></video>
-      <div style="margin-top:8px"><b>${esc(r.event)}</b> · <span class="pill v">⚡ ${r.score}</span> ${r.source === 'uploaded' ? '<span class="pill r">UPLOADED FROM GALLERY</span>' : '<span class="pill g">RECORDED LIVE</span>'} <span class="pill">${r.distance_m ?? '?'} m from venue</span></div>
+      <div style="margin-top:8px"><b>${esc(r.event)}</b> · <span class="pill v">⚡ ${r.score}</span> ${r.source === 'uploaded' ? '<span class="pill r">UPLOADED FROM GALLERY</span>' : '<span class="pill g">RECORDED LIVE</span>'} <span class="pill">${r.distance_m ?? '?'} m from venue</span> ${vipIds.has(r.id) ? '<span class="pill gold">👑 VIP ZONE</span>' : ''} <button class="btn sm ghost vt" data-on="${vipIds.has(r.id) ? 0 : 1}" style="height:28px">${vipIds.has(r.id) ? 'Untag VIP' : '👑 Tag VIP'}</button></div>
       <div class="sm" style="margin-top:6px">${esc(r.caption || '')}</div>
       <div class="mut sm">👁 ${r.views} · ❤️ ${r.likes} · 📤 ${r.shares}</div><div class="mut sm">${esc(r.creator_name || 'No name')} · ${r.instagram ? '@' + esc(r.instagram) : 'no Instagram'} · UPI: ${esc(r.upi || 'not added')} · ${fmtD(r.created_at)}</div>
       ${tab === 'review' ? `<div class="row" style="margin-top:8px"><div><label>Payout if picked (₹)</label><input class="po" inputmode="numeric" value="100"></div></div>
@@ -602,6 +623,36 @@ async function orgPage(name) {
 
 // ---------- organiser portal ----------
 const locDT = d => new Date(d.getTime() - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 16);
+// ---------- VIP experience (decoy tier) ----------
+const inr = n => '₹' + Number(n || 0).toLocaleString('en-IN');
+function vipPerks(v) {
+  return [v.perk_camera && '🎥 Dedicated camera on the VIP zone, sure shot in the aftermovie', v.perk_merch && '🎁 Exclusive VIP merch', v.perk_meet && '🤝 Meet &amp; greet with artists, guests and organisers'].filter(Boolean);
+}
+function vipForm(v) {
+  v = v || {};
+  const on = !!v.enabled;
+  return `<div class="card vipf" style="border-color:var(--gold)"><label class="check" style="margin-top:0"><input type="checkbox" class="v_on" ${on ? 'checked' : ''}> <span><b>👑 Add a VIP Experience</b> <span class="mut sm">(optional)</span></span></label>
+    <div class="v_box" style="${on ? '' : 'display:none'}">
+      <p class="mut sm">A premium show-off option next to regular entry. Price it high on purpose: it makes regular entry look like the smart choice.</p>
+      <label>VIP zone name</label><input class="v_zone" placeholder="Front Stage VIP Deck" value="${esc(v.zone || '')}">
+      <div class="row"><div><label>Capacity</label><input class="v_cap" inputmode="numeric" placeholder="50" value="${v.capacity ?? 50}"></div><div><label>VIP pass price (₹)</label><input class="v_price" inputmode="numeric" placeholder="4999" value="${v.price ?? 4999}"></div></div>
+      <p class="mut sm">We suggest ₹4,999 or more.</p>
+      <label>Perks</label>
+      <label class="check"><input type="checkbox" class="v_cam" ${v.perk_camera ?? true ? 'checked' : ''}> <span>Dedicated camera focus on the VIP zone, sure shot in the aftermovie</span></label>
+      <label class="check"><input type="checkbox" class="v_merch" ${v.perk_merch ? 'checked' : ''}> <span>Exclusive merchandise for VIPs</span></label>
+      <label class="check"><input type="checkbox" class="v_meet" ${v.perk_meet ? 'checked' : ''}> <span>Meet &amp; greet with artists, guests or organisers</span></label>
+      <label class="check"><input type="checkbox" class="v_lim" ${v.limited ?? true ? 'checked' : ''}> <span>Limited slots (stops at capacity)</span></label>
+      <label class="check"><input type="checkbox" class="v_inv" ${v.invite_only ? 'checked' : ''}> <span>Invite-only (fans request, you choose)</span></label>
+      ${v.requests != null ? `<p class="sm" style="margin-top:8px">👑 ${v.requests} VIP requests · 🎥 ${v.vip_reels || 0} VIP-zone reels</p>` : ''}
+    </div></div>`;
+}
+function bindVipForm(root) { const cb = root.querySelector('.v_on'); cb.onchange = () => root.querySelector('.v_box').style.display = cb.checked ? '' : 'none'; }
+function readVip(root) {
+  const q = c => root.querySelector(c);
+  return { enabled: q('.v_on').checked, zone: q('.v_zone').value, capacity: q('.v_cap').value.replace(/\D/g, '') || null, price: q('.v_price').value.replace(/\D/g, '') || null,
+    perk_camera: q('.v_cam').checked, perk_merch: q('.v_merch').checked, perk_meet: q('.v_meet').checked, limited: q('.v_lim').checked, invite_only: q('.v_inv').checked };
+}
+
 async function orgPortal(tab, q) {
   await ready;
   const h = await rpc('vh_org_home');
@@ -664,15 +715,22 @@ async function orgPortal(tab, q) {
       <div class="row"><div><label>Latitude</label><input id="la" inputmode="decimal"></div><div><label>Longitude</label><input id="lg" inputmode="decimal"></div></div>
       <div id="map" class="sm"></div>
       <label>Check-in radius (metres)</label><input id="ra" inputmode="numeric" value="500"><p class="mut sm">Fans must be inside this circle to scan in and post. 300–800 m suits most grounds.</p>
+      ${vipForm()}
       <button class="btn" id="mk">Create event &amp; get QR</button></div>`;
     const showMap = () => { const la = parseFloat($('#la').value), lg = parseFloat($('#lg').value); $('#map').innerHTML = isNaN(la) || isNaN(lg) ? '' : `<a style="color:#c9a8ff" target="_blank" href="https://www.google.com/maps/search/?api=1&query=${la},${lg}">🗺 Check this spot on Google Maps</a>`; };
+    bindVipForm(body.querySelector('.vipf'));
     $('#la').oninput = $('#lg').oninput = showMap;
     $('#here').onclick = async () => { try { const c = await getPos(); $('#la').value = c.latitude.toFixed(6); $('#lg').value = c.longitude.toFixed(6); showMap(); toast(`Got it (±${Math.round(c.accuracy)} m)`); } catch (e) { toast(e.message); } };
     $('#mk').onclick = async () => {
+      const vc = readVip(body.querySelector('.vipf'));
+      if (vc.enabled && !vc.zone.trim()) return toast('Give the VIP zone a name');
+      if (vc.enabled && !(+vc.price > 0)) return toast('Set a VIP price');
       const b = $('#mk'); b.disabled = true;
       try {
         const r = await rpc('vh_org_create_event', { p_name: $('#en').value, p_venue: $('#ev').value, p_lat: parseFloat($('#la').value), p_lng: parseFloat($('#lg').value),
           p_radius: parseInt($('#ra').value) || 500, p_starts: new Date($('#es').value).toISOString(), p_ends: new Date($('#ee').value).toISOString() });
+        const vcfg = readVip(body.querySelector('.vipf'));
+        if (vcfg.enabled) { try { await rpc('vh_org_set_vip', { p_slug: r.slug, p_cfg: vcfg }); } catch (er) { toast('Event made, but VIP not saved: ' + er.message, 4000); } }
         toast('Event created ✅'); location.hash = `#/screen/${r.slug}`;
       } catch (e) { toast(e.message); b.disabled = false; }
     };
@@ -682,6 +740,7 @@ async function orgPortal(tab, q) {
   if (tab === 'reels') {
     const st = q.get('st') || 'pending', ev = q.get('e') || '';
     const list = await rpc('vh_org_reels', { p_status: st, p_slug: ev || null });
+    const vipIds = new Set(list.length ? await rpc('vh_vip_reel_ids', { p_ids: list.map(r => r.id) }, false).catch(() => []) : []);
     const chip = (k, l) => `<a class="btn sm ${st === k ? '' : 'ghost'}" href="#/org/reels?st=${k}${ev ? '&e=' + ev : ''}">${l}</a>`;
     body.innerHTML = `<div style="margin-top:12px">${chip('pending', '⏳ Pending')}${chip('approved', '✅ Live')}${chip('featured', '⭐ Picked')}${chip('rejected', '❌ Rejected')}</div>
       <select id="evf" style="margin-top:8px"><option value="">All events</option>${h.events.map(e => `<option value="${e.slug}" ${e.slug === ev ? 'selected' : ''}>${esc(e.name)}</option>`).join('')}</select>
@@ -693,6 +752,7 @@ async function orgPortal(tab, q) {
         <div class="mut sm">👁 ${r.views} · ❤️ ${r.likes} · 📤 ${r.shares} · 💬 ${r.comments} · ${ago(r.created_at)}</div>
         ${r.reject_reason ? `<div class="sm" style="color:#ff7a7a">Rejected: ${esc(r.reject_reason)}</div>` : ''}
         <div style="margin-top:8px">${st !== 'approved' ? '<button class="btn sm act" data-a="approved">✅ Approve</button>' : ''}${st !== 'featured' ? '<button class="btn sm g act" data-a="featured">⭐ Pick</button>' : ''}${st !== 'rejected' ? `<select class="rs" style="margin-top:6px"><option value="">Reject reason…</option><option>Not filmed at this event</option><option>Inappropriate content</option><option>Harassment or mocking someone</option><option>Repost / not their video</option><option>Low quality</option><option>Duplicate</option></select><button class="btn sm ghost act" data-a="rejected">${st === 'pending' ? '❌ Reject' : '🗑 Remove'}</button>` : ''}</div></div>`).join('') || `<p class="mut" style="margin-top:14px">${st === 'pending' ? 'All caught up. No reels waiting.' : 'Nothing here.'}</p>`}`;
+    body.querySelectorAll('.vt').forEach(b => b.onclick = async () => { try { await rpc('vh_tag_reel_vip', { p_reel: b.closest('.card').dataset.id, p_on: b.dataset.on === '1' }); toast('Updated'); orgPortal(tab, q); } catch (e) { toast(e.message); } });
     $('#evf').onchange = e => location.hash = `#/org/reels?st=${st}${e.target.value ? '&e=' + e.target.value : ''}`;
     body.querySelectorAll('.act').forEach(b => b.onclick = async () => {
       const c = b.closest('.card'), a = b.dataset.a, reason = c.querySelector('.rs')?.value || null;
@@ -710,11 +770,18 @@ async function orgPortal(tab, q) {
       <div class="mut sm">✅ ${e.checked_in} checked in · 🎬 ${e.reels} reels${e.pending ? ` · <b style="color:var(--gold)">${e.pending} to review</b>` : ''}</div>
       <a class="btn sm" href="#/screen/${e.slug}">📺 QR / venue screen</a>${e.pending ? `<a class="btn sm g" href="#/org/reels?st=pending&e=${e.slug}">Review ${e.pending}</a>` : ''}
       <a class="btn sm ghost" href="#/e/${e.slug}">Fan page</a>${over ? `<a class="btn sm ghost" href="#/movie/${e.slug}">🎬 Aftermovie</a>` : ''}
-      <button class="btn sm line dash">📊 Dashboard</button><button class="btn sm ghost ed">✏️ Edit</button><div class="dbox"></div></div>`;
+      <button class="btn sm line dash">📊 Dashboard</button><button class="btn sm ghost ed">✏️ Edit</button><button class="btn sm ghost vp">👑 VIP</button><div class="dbox"></div></div>`;
   }).join('') || '<div class="card center"><p class="mut">No events yet.</p><a class="btn" href="#/org/new">+ Create your first event</a></div>');
   body.querySelectorAll('.card[data-slug]').forEach(c => {
     const slug = c.dataset.slug, e = h.events.find(x => x.slug === slug), box = c.querySelector('.dbox');
     c.querySelector('.dash').onclick = () => { if (box.dataset.m === 'd') { box.innerHTML = ''; box.dataset.m = ''; return; } box.dataset.m = 'd'; eventDash(slug, box); };
+    c.querySelector('.vp').onclick = async () => {
+      if (box.dataset.m === 'v') { box.innerHTML = ''; box.dataset.m = ''; return; } box.dataset.m = 'v';
+      let v = {}; try { v = await rpc('vh_org_get_vip', { p_slug: slug }); } catch (er) {}
+      box.innerHTML = vipForm(v) + '<button class="btn sm vs">Save VIP</button>';
+      const f = box.querySelector('.vipf'); bindVipForm(f);
+      box.querySelector('.vs').onclick = async () => { try { await rpc('vh_org_set_vip', { p_slug: slug, p_cfg: readVip(f) }); toast('VIP saved ✅'); } catch (er) { toast(er.message); } };
+    };
     c.querySelector('.ed').onclick = () => {
       if (box.dataset.m === 'e') { box.innerHTML = ''; box.dataset.m = ''; return; } box.dataset.m = 'e';
       box.innerHTML = `<div style="margin-top:10px"><label>Event name</label><input class="xn" value="${esc(e.name)}"><label>Venue</label><input class="xv" value="${esc(e.venue || '')}">
